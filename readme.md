@@ -8,7 +8,14 @@ The target is to minimize the requirements in this project
 - opencv 3.3
 - Eigen 3
 
-## Localization
-- [x] Extend kalman filter    
+
+# Table of Contents
+* [Localization](#localization)
+    * [Extend kalmam filter](#extended-kalman-filter-localization) [x]
+    * Partical filter []
+    * Histogram filter []
+* Mapping []
+
+# Localization
+## Extend kalman filter
 ![ekf_gif](./Localization/extended_kalman_filter/ekf.gif)
-- [] Partical filter
