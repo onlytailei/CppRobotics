@@ -141,7 +141,7 @@ int main(){
     z(1) = xTrue(1) + gaussian_d(gen) * Rsim(1,1);
 
     ekf_estimation(xEst, PEst, z, ud, Q, R);
-
+    std::cout<<xEst<<std::endl;
     // TODO animation from images
   }
 }
