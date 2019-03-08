@@ -167,7 +167,8 @@ int main(){
     cv::imshow("ekf", bg);
     cv::waitKey(5);
 
-    cv::imwrite("./pngs/"+std::to_string(count)+".png", bg);
+    //std::string int_count = std::to_string(count);
+    //cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
     count++;
   }
 }
