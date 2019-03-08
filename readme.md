@@ -9,6 +9,6 @@ The target is to minimize the requirements in this project
 - Eigen 3
 
 ## Localization
-- [x] Extend kalman filter
+- [x] Extend kalman filter    
 ![ekf_gif](./Localization/extended_kalman_filter/ekf.gif)
 - [] Partical filter
