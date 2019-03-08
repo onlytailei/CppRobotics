@@ -86,7 +86,7 @@ cv::Point2i cv_offset(Eigen::Vector2f e_p, int image_width=2000, int image_heigh
 };
 
 int main(){
-  int time=0.0;
+  float time=0.0;
 
   // control input
   Eigen::Vector2f u;
@@ -139,8 +139,9 @@ int main(){
   std::normal_distribution<> gaussian_d{0,1};
 
   //for visualization
-  cv::namedWindow("Display window", cv::WINDOW_NORMAL);
+  cv::namedWindow("ekf", cv::WINDOW_NORMAL);
   cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
+  int count = 0;
 
   while(time <= SIM_TIME){
     time += DT;
@@ -163,7 +164,10 @@ int main(){
     cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows), 10, cv::Scalar(0, 0, 0), -1);
     // red observation
     cv::circle(bg, cv_offset(z, bg.cols, bg.rows), 10, cv::Scalar(0, 0, 255), -1);
-    cv::imshow("Display window", bg);
+    cv::imshow("ekf", bg);
     cv::waitKey(5);
+
+    cv::imwrite("./pngs/"+std::to_string(count)+".png", bg);
+    count++;
   }
 }
