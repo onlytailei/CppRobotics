@@ -10,6 +10,8 @@
 #include<math.h>
 #include<Eigen/Eigen>
 #include<opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #define SIM_TIME 50.0
 #define DT 0.1
@@ -76,6 +78,12 @@ void ekf_estimation(Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst,
     PEst = (Eigen::Matrix4f::Identity() - K * jH) * PPred;
 };
 
+cv::Point2i cv_offset(Eigen::Vector2f e_p, int image_width=2000, int image_height=2000){
+  cv::Point2i output;
+  output.x = int(e_p(0) * 100) + image_width/2;
+  output.y = image_height - int(e_p(1) * 100) - image_height/3;
+  return output;
+};
 
 int main(){
   int time=0.0;
@@ -130,10 +138,14 @@ int main(){
   std::mt19937 gen{rd()};
   std::normal_distribution<> gaussian_d{0,1};
 
+  //for visualization
+  cv::namedWindow("Display window", cv::WINDOW_NORMAL);
+  cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
+
   while(time <= SIM_TIME){
     time += DT;
     ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
-    ud(1) = u(0) + gaussian_d(gen) * Qsim(1,1);
+    ud(1) = u(1) + gaussian_d(gen) * Qsim(1,1);
 
     xTrue = motion_model(xTrue, u);
     xDR = motion_model(xDR, ud);
@@ -142,8 +154,16 @@ int main(){
     z(1) = xTrue(1) + gaussian_d(gen) * Rsim(1,1);
 
     ekf_estimation(xEst, PEst, z, ud, Q, R);
-    cv::Mat bg(cv::Size(1000,1000), cv::)
-    // std::cout<<xEst(0)<<" "<<xEst(1)<<std::endl;
-    // TODO animation from images
+
+    // blue estimation
+    cv::circle(bg, cv_offset(xEst.head(2), bg.cols, bg.rows), 10, cv::Scalar(255,0,0), -1);
+    // green groundtruth
+    cv::circle(bg, cv_offset(xTrue.head(2), bg.cols, bg.rows), 10, cv::Scalar(0,255,0), -1);
+    // black dead reckoning
+    cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows), 10, cv::Scalar(0, 0, 0), -1);
+    // red observation
+    cv::circle(bg, cv_offset(z, bg.cols, bg.rows), 10, cv::Scalar(0, 0, 255), -1);
+    cv::imshow("Display window", bg);
+    cv::waitKey(5);
   }
 }
