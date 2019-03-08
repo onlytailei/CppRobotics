@@ -9,6 +9,7 @@
 #include<random>
 #include<math.h>
 #include<Eigen/Eigen>
+#include<opencv2/opencv.hpp>
 
 #define SIM_TIME 50.0
 #define DT 0.1
@@ -141,7 +142,8 @@ int main(){
     z(1) = xTrue(1) + gaussian_d(gen) * Rsim(1,1);
 
     ekf_estimation(xEst, PEst, z, ud, Q, R);
-    std::cout<<xEst<<std::endl;
+    cv::Mat bg(cv::Size(1000,1000), cv::)
+    // std::cout<<xEst(0)<<" "<<xEst(1)<<std::endl;
     // TODO animation from images
   }
 }
