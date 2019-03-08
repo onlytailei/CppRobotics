@@ -16,41 +16,49 @@
 
 using namespace std;
 
-class ExtendedKalmanFilter{
-  public:
-    ExtendedKalmanFilter(Eigen::Matrix4f F, Eigen::Matrix<float, 4,2> B): F_(F), B_(B){};
-
-    // x_{t+1} = F@x_{t}+B@u_t
-    Eigen::Vector4f motion_model(Eigen::Vector4f, Eigen::Vector2f);
-    Eigen::Vector2f observation(Eigen::Vector4f&, Eigen::Vector2f&, Eigen::Vector2f&);
-
-  private:
-    // x_{t+1} = F@x_{t}+B@u_t
-    Eigen::Matrix4f F_;
-    Eigen::Matrix<float, 4, 2> B_;
-    Eigen::Matrix4f Q_;
-    Eigen::Matrix4f R_;
-
-
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
-    std::normal_distribution<> gaussian_d{0,1};
-};
-
-
 // x_{t+1} = F@x_{t}+B@u_t
-Eigen::Vector4f ExtendedKalmanFilter::motion_model(Eigen::Vector4f x, Eigen::Vector2f u){
+Eigen::Vector4f motion_model(Eigen::Vector4f x, Eigen::Vector2f u){
+  Eigen::Matrix4f F_;
+  F_<<1.0,   0,   0,   0,
+        0, 1.0,   0,   0,
+        0,   0, 1.0,   0,
+        0,   0,   0, 1.0;
+
+  Eigen::Matrix<float, 4, 2> B_;
+  B_<< DT * std::cos(x(2,0)),  0,
+       DT * std::sin(x(2,0)),  0,
+                        0.0,  DT,
+                        1.0,  0.0;
+
   return F_ * x + B_ * u;
 };
 
-// add noise to ud
-Eigen::Vector2f ExtendedKalmanFilter::observation(Eigen::Vector4f &xTrue, Eigen::Vector2f &xd, Eigen::Vector2f &u){
-  xTrue = motion_model(xTrue, xd);
+Eigen::Matrix4f jacobF(Eigen::Vector4f x){
+  Eigen::Matrix4f jF_ = Eigen::Matrix::Identity();
+  float yaw = x
+  jF_<< 1, 0, 0, 0,
+        0, 1, 0, 0;
+  return jF_;
+}
 
-  Eigen::Vector2f z;
-  z(0) = xTrue(0) + gaussian_d(gen);
-  z(1) = xTrue(1) + gaussian_d(gen);
-  return z;
+//observation mode H
+Eigen::Vector2f observation_model(Eigen::Vector4f x){
+  Eigen::Matrix<float, 2, 4> H_;
+  H_<< 1, 0, 0, 0,
+       0, 1, 0, 0;
+
+  return H_ * x;
+}
+
+Eigen::Matrix<float, 4, 2> jacobH(Eigen::Vector4f x){
+  Eigen::Matrix<float, 4, 2> jH_;
+  jH_<< 1, 0, 0, 0,
+        0, 1, 0, 0;
+  return jH_;
+}
+
+void ekf_estimation(Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst, Eigen::Vector2f z, Eigen::Vector2f u){
+    Eigen::Vector4f xPred = motion_model(xEst, u);
 }
 
 
@@ -61,24 +69,64 @@ int main(){
   Eigen::Vector2f u;
   u<<1.0, 0.1;
 
+  // nosie control input
+  Eigen::Vector2f ud;
+
+  // observation z
+  Eigen::Vector2f z;
+
   // dead reckoning
   Eigen::Vector4f xDR;
   xDR<<0.0,0.0,0.0,0.0;
 
-  // Q, R
+  // ground truth reading
+  Eigen::Vector4f xTrue;
+  xTrue<<0.0,0.0,0.0,0.0;
+
+  // Estimation
+  Eigen::Vector4f xEst;
+  xEst<<0.0,0.0,0.0,0.0;
+
+  Eigen::Matrix4f PEst = Eigen::Matrix4f::Identity();
+
+  // Motional model covariance
   Eigen::Matrix4f Q = Eigen::Matrix4f::Identity();
   Q(0,0)=0.1 * 0.1;
   Q(1,1)=0.1 * 0.1;
   Q(2,2)=(1.0/180 * M_PI) * (1.0/180 * M_PI);
   Q(3,3)=0.1 * 0.1;
 
-  Eigen::Matrix2f R = Eigen::Matrix2f::Identity();
+  // Observation model covariance
+  Eigen::Matrix2f  R = Eigen::Matrix2f::Identity();
   R(0,0)=1.0;
   R(1,1)=1.0;
 
-  // Qsim Rsim
+  // Motion model simulation error
+  Eigen::Matrix2f Qsim = Eigen::Matrix2f::Identity();
+  Qsim(0,0)=1.0;
+  Qsim(1,1)=(30.0/180 * M_PI) * (30.0/180 * M_PI);
+
+  // Observation model simulation error
+  Eigen::Matrix2f Rsim = Eigen::Matrix2f::Identity();
+  Rsim(0,0)=0.5 * 0.5;
+  Rsim(1,1)=0.5 * 0.5;
+
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::normal_distribution<> gaussian_d{0,1};
 
   while(time <= SIM_TIME){
     time += DT;
+    ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
+    ud(1) = u(0) + gaussian_d(gen) * Qsim(1,1);
+
+    xTrue = motion_model(xTrue, u);
+    xDR = motion_model(xDR, ud);
+
+    z(0) = xTrue(0) + gaussian_d(gen) * Rsim(0,0);
+    z(1) = xTrue(1) + gaussian_d(gen) * Rsim(1,1);
+
+    ekf_estimation(xEst, PEst, z, ud);
+
   }
 }
