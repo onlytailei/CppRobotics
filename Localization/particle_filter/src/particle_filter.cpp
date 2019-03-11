@@ -16,6 +16,9 @@
 #define SIM_TIME 50.0
 #define DT 0.1
 #define PI 3.141592653
+#define MAX_RANGE 20.0
+#define NP 100
+#define NTh NP/2
 
 using namespace std;
 
@@ -95,8 +98,13 @@ int main(){
   // nosie control input
   Eigen::Vector2f ud;
 
-  // observation z
-  Eigen::Vector2f z;
+
+  // RFID remarks
+  Eigen::Matrix<float, 4, 2> RFID;
+  RFID<<10.0, 0.0,
+        10.0, 10.0,
+        0.0,  15.0,
+        -5.0, 20.0;
 
   // dead reckoning
   Eigen::Vector4f xDR;
@@ -113,26 +121,27 @@ int main(){
   Eigen::Matrix4f PEst = Eigen::Matrix4f::Identity();
 
   // Motional model covariance
-  Eigen::Matrix4f Q = Eigen::Matrix4f::Identity();
+  Eigen::Matrix1f Q = Eigen::Matrix1f::Identity();
   Q(0,0)=0.1 * 0.1;
-  Q(1,1)=0.1 * 0.1;
-  Q(2,2)=(1.0/180 * M_PI) * (1.0/180 * M_PI);
-  Q(3,3)=0.1 * 0.1;
 
   // Observation model covariance
   Eigen::Matrix2f  R = Eigen::Matrix2f::Identity();
   R(0,0)=1.0;
-  R(1,1)=1.0;
+  R(1,1)=40.0/180.0 * PI * 40.0/180.0 * PI;
 
   // Motion model simulation error
-  Eigen::Matrix2f Qsim = Eigen::Matrix2f::Identity();
-  Qsim(0,0)=1.0;
-  Qsim(1,1)=(30.0/180 * M_PI) * (30.0/180 * M_PI);
+  Eigen::Matrix1f Qsim = Eigen::Matrix1f::Identity();
+  Qsim(0,0)=0.2*0.2;
 
   // Observation model simulation error
   Eigen::Matrix2f Rsim = Eigen::Matrix2f::Identity();
-  Rsim(0,0)=0.5 * 0.5;
-  Rsim(1,1)=0.5 * 0.5;
+  Rsim(0,0)=1.0 * 1.0;
+  Rsim(1,1)=30.0/180.0 * PI * 30.0/180.0 * PI;
+
+  // particle stor
+  Eigen::Matrix<float, 4, NP> px = Eigen::Matrix<float, 4, NP>::Zero();
+
+  Eigen::Vector<float, NP> pw = Eigen::Vector<float, NP>::Zero();
 
   std::random_device rd{};
   std::mt19937 gen{rd()};
@@ -145,12 +154,28 @@ int main(){
 
   while(time <= SIM_TIME){
     time += DT;
-    
-    ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
-    ud(1) = u(1) + gaussian_d(gen) * Qsim(1,1);
+
+    ud(0) = u(0) + gaussian_d(gen) * Rsim(0,0);
+    ud(1) = u(1) + gaussian_d(gen) * Rsim(1,1);
 
     xTrue = motion_model(xTrue, u);
     xDR = motion_model(xDR, ud);
+
+    // observation z
+    Eigen::Matrix3cf z;
+
+    for(int i=0; i<NP; i++){
+      float dx = xTrue(0) - RFID(i, 0);
+      float dy = xTrue(1) - RFID(i, 1);
+      float d = std::sqrt(dx*dx + dy*dy);
+      if (d <= MAX_RANGE){
+        float dn = d + gaussian_d(gen) * Qsim(0);
+        Eigen::RowVector3f zi;
+        zi<<dn, RFID(i, 0), RFID(i, 1);
+        z =
+      }
+
+    }
 
     z(0) = xTrue(0) + gaussian_d(gen) * Rsim(0,0);
     z(1) = xTrue(1) + gaussian_d(gen) * Rsim(1,1);
