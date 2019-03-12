@@ -7,5 +7,5 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-add_executable(parf src/particle_filter.cpp)
-target_link_libraries(parf ${OpenCV_LIBS} )
+add_executable(pf src/particle_filter.cpp)
+target_link_libraries(pf ${OpenCV_LIBS} )

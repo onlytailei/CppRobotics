@@ -67,51 +67,103 @@ Eigen::Matrix<float, 2, 4> jacobH(Eigen::Vector4f x){
 };
 
 // TODO gaussian likelihood
-// float gauss_likelihood(x, sigma):
-//     p = 1.0 / math.sqrt(2.0 * math.pi * sigma ** 2) * \
-//         math.exp(-x ** 2 / (2 * sigma ** 2))
-//
-//     return p
+float gauss_likelihood(float x, float sigma){
+    float p = 1.0 / std::sqrt(2.0 * PI * sigma * sigma) * \
+        std::exp(-x * x / (2 * sigma * sigma));
+    return p;
+};
+
+Eigen::Matrix4f calc_covariance(
+    Eigen::Vector4f xEst,
+    Eigen::Matrix<float, 4, NP> px,
+    Eigen::Matrix<float, NP, 1> pw){
+
+  Eigen::Matrix4f PEst_ = Eigen::Matrix4f::Zero();
+  for(int i=0; i++; i<px.cols()){
+      Eigen::Vector4f dx = px.col(i) - xEst;
+      PEst_ += pw(i) * dx * dx.transpose();
+  }
+
+  return PEst_;
+};
 
 void pf_localization(
-  Eigen::Matrix<float, 4, NP>& px, Eigen::Vector<float, NP>& pw,
+  Eigen::Matrix<float, 4, NP>& px, Eigen::Matrix<float, NP, 1>& pw,
   Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst,
-  std::vector<Eigen::RowVector3f> z, Eigen::Vector2f u){
+  std::vector<Eigen::RowVector3f> z, Eigen::Vector2f u,
+  Eigen::Matrix2f Rsim, float Q,
+  std::mt19937 gen,  std::normal_distribution<> gaussian_d
+  ){
 
-    for(int ip=0; ip<NP; i++){
+    for(int ip=0; ip<NP; ip++){
       Eigen::Vector4f x = px.col(ip);
-      w = pw(ip);
+      float w = pw(ip);
 
       Eigen::Vector2f ud;
 
-      ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
-      ud(1) = u(1) + gaussian_d(gen) * Qsim(1,1);
+      ud(0) = u(0) + gaussian_d(gen) * Rsim(0,0);
+      ud(1) = u(1) + gaussian_d(gen) * Rsim(1,1);
 
       x = motion_model(x, ud);
 
       for(int i=0; i<z.size(); i++){
-          float dx = x(0) - z[i](1);
-          float dy = x(1) - z[i](2);
+          Eigen::RowVector3f item = z[i];
+          float dx = x(0) - item(1);
+          float dy = x(1) - item(2);
           float prez = std::sqrt(dx*dx + dy*dy);
-          float dz = prez - z[i](0);
-          // w = w * gauss_likelihood(dz, math.sqrt(Q[0, 0]))
+          float dz = prez - item(0);
+          w = w * gauss_likelihood(dz, std::sqrt(Q));
       }
-      // px[:, ip] = x[:, 0]
-      // pw[0, ip] = w
+      px.col(ip) = x;
+      pw(ip) = w;
     }
 
-    // Eigen::Vector4f xPred = motion_model(xEst, u);
-    // Eigen::Matrix4f jF = jacobF(xPred, u);
-    // Eigen::Matrix4f PPred = jF * PEst * jF.transpose() + Q;
-    //
-    // Eigen::Matrix<float, 2, 4> jH = jacobH(xPred);
-    // Eigen::Vector2f zPred = observation_model(xPred);
-    // Eigen::Vector2f y = z - zPred;
-    // Eigen::Matrix2f S = jH * PPred * jH.transpose() + R;
-    // Eigen::Matrix<float, 4, 2> K = PPred * jH.transpose() * S.inverse();
-    // xEst = xPred + K * y;
-    // PEst = (Eigen::Matrix4f::Identity() - K * jH) * PPred;
+    pw = pw / pw.sum();
+
+    xEst = px * pw;
+    PEst = calc_covariance(xEst, px, pw);
+
 };
+
+Eigen::Matrix<float, NP, 1> cumsum(Eigen::Matrix<float, NP, 1> pw){
+  Eigen::Matrix<float, NP, 1> cum;
+  cum(0) = pw(0);
+  for(int i=1; i<pw.rows(); i++){
+    cum(i) = cum(i-1) + pw(i);
+  }
+  return cum;
+}
+
+void resampling(
+      Eigen::Matrix<float, 4, NP>& px,
+      Eigen::Matrix<float, NP, 1>& pw,
+      std::mt19937 gen,
+      std::uniform_real_distribution<> uni_d){
+
+  float Neff = 1.0 / (pw.transpose() * pw);
+  if (Neff < NTh){
+    Eigen::Matrix<float, NP, 1> wcum = cumsum(pw);
+    Eigen::Matrix<float, NP, 1> base = cumsum(pw * 0.0 +  Eigen::Matrix<float, NP, 1>::Ones()*1.0/NP) - Eigen::Matrix<float, NP, 1>::Ones()*1.0/NP;
+    Eigen::Matrix<float, NP, 1> resampleid;
+    Eigen::Matrix<float, 4, NP> output;
+    for(int j=0; j<pw.rows(); j++){
+      resampleid(j) = base(j) + uni_d(gen)/NP;
+    }
+
+    int ind = 0;
+
+    for(int i=0; i<NP; i++){
+        while(resampleid(i) > wcum(ind) && ind<NP-1){
+          ind += 1;
+        }
+        output.col(i) = px.col(ind);
+    }
+
+    px = output;
+    pw = Eigen::Matrix<float, NP, 1>::Ones()*1.0/NP;
+  }
+};
+
 
 cv::Point2i cv_offset(
     Eigen::Vector2f e_p, int image_width=2000, int image_height=2000){
@@ -156,8 +208,7 @@ int main(){
   Eigen::Matrix4f PEst = Eigen::Matrix4f::Identity();
 
   // Motional model covariance
-  Eigen::Matrix1f Q = Eigen::Matrix1f::Identity();
-  Q(0,0)=0.1 * 0.1;
+  float Q = 0.01;
 
   // Observation model covariance
   Eigen::Matrix2f  R = Eigen::Matrix2f::Identity();
@@ -165,8 +216,7 @@ int main(){
   R(1,1)=40.0/180.0 * PI * 40.0/180.0 * PI;
 
   // Motion model simulation error
-  Eigen::Matrix1f Qsim = Eigen::Matrix1f::Identity();
-  Qsim(0,0)=0.2*0.2;
+  float Qsim = 0.04;
 
   // Observation model simulation error
   Eigen::Matrix2f Rsim = Eigen::Matrix2f::Identity();
@@ -176,16 +226,19 @@ int main(){
   // particle stor
   Eigen::Matrix<float, 4, NP> px = Eigen::Matrix<float, 4, NP>::Zero();
 
-  Eigen::Vector<float, NP> pw = Eigen::Vector<float, NP>::Zero();
+  Eigen::Matrix<float, NP, 1> pw = Eigen::Matrix<float, NP, 1>::Ones() * 1.0/NP;
 
   std::random_device rd{};
   std::mt19937 gen{rd()};
   std::normal_distribution<> gaussian_d{0,1};
+  std::random_device rd2{};
+  std::mt19937 gen2{rd2()};
+  std::uniform_real_distribution<> uni_d{1.0, 2.0};
 
   //for visualization
-  cv::namedWindow("ekf", cv::WINDOW_NORMAL);
-  cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
-  int count = 0;
+  // cv::namedWindow("ekf", cv::WINDOW_NORMAL);
+  // cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
+  // int count = 0;
 
   while(time <= SIM_TIME){
     time += DT;
@@ -197,41 +250,44 @@ int main(){
     xDR = motion_model(xDR, ud);
 
     z.clear();
-    for(int i=0; i<NP; i++){
+    for(int i=0; i<RFID.rows(); i++){
       float dx = xTrue(0) - RFID(i, 0);
       float dy = xTrue(1) - RFID(i, 1);
       float d = std::sqrt(dx*dx + dy*dy);
       if (d <= MAX_RANGE){
-        float dn = d + gaussian_d(gen) * Qsim(0);
+        float dn = d + gaussian_d(gen) * Qsim;
         Eigen::RowVector3f zi;
         zi<<dn, RFID(i, 0), RFID(i, 1);
         z.push_back(zi);
       }
     }
 
-    // TODO pf localization
+    pf_localization(px, pw, xEst, PEst, z, u, Rsim, Q, gen, gaussian_d);
+    resampling(px, pw, gen2, uni_d);
+
+    // TODO visualization
 
     // blue estimation
-    cv::circle(bg, cv_offset(xEst.head(2), bg.cols, bg.rows),
-               10, cv::Scalar(255,0,0), -1);
-
-    // green groundtruth
-    cv::circle(bg, cv_offset(xTrue.head(2), bg.cols, bg.rows),
-               10, cv::Scalar(0,255,0), -1);
-
-    // black dead reckoning
-    cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows),
-               10, cv::Scalar(0, 0, 0), -1);
-
-    // red observation
-    cv::circle(bg, cv_offset(z, bg.cols, bg.rows),
-               10, cv::Scalar(0, 0, 255), -1);
-
-    cv::imshow("ekf", bg);
-    cv::waitKey(5);
+    // cv::circle(bg, cv_offset(xEst.head(2), bg.cols, bg.rows),
+    //            10, cv::Scalar(255,0,0), -1);
+    //
+    // // green groundtruth
+    // cv::circle(bg, cv_offset(xTrue.head(2), bg.cols, bg.rows),
+    //            10, cv::Scalar(0,255,0), -1);
+    //
+    // // black dead reckoning
+    // cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows),
+    //            10, cv::Scalar(0, 0, 0), -1);
+    //
+    // // red observation
+    // cv::circle(bg, cv_offset(z, bg.cols, bg.rows),
+    //            10, cv::Scalar(0, 0, 255), -1);
+    //
+    // cv::imshow("ekf", bg);
+    // cv::waitKey(5);
 
     //std::string int_count = std::to_string(count);
     //cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
-    count++;
+    // count++;
   }
 }

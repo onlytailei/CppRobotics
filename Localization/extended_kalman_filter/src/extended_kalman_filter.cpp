@@ -5,11 +5,11 @@
 	> Created Time: Thu Mar  7 19:39:14 2019
  ************************************************************************/
 
-#include<iostream>
-#include<random>
-#include<math.h>
-#include<Eigen/Eigen>
-#include<opencv2/opencv.hpp>
+#include <iostream>
+#include <random>
+#include <math.h>
+#include <Eigen/Eigen>
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -78,7 +78,8 @@ void ekf_estimation(Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst,
     PEst = (Eigen::Matrix4f::Identity() - K * jH) * PPred;
 };
 
-cv::Point2i cv_offset(Eigen::Vector2f e_p, int image_width=2000, int image_height=2000){
+cv::Point2i cv_offset(
+    Eigen::Vector2f e_p, int image_width=2000, int image_height=2000){
   cv::Point2i output;
   output.x = int(e_p(0) * 100) + image_width/2;
   output.y = image_height - int(e_p(1) * 100) - image_height/3;
@@ -145,7 +146,7 @@ int main(){
 
   while(time <= SIM_TIME){
     time += DT;
-    
+
     ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
     ud(1) = u(1) + gaussian_d(gen) * Qsim(1,1);
 
@@ -158,13 +159,21 @@ int main(){
     ekf_estimation(xEst, PEst, z, ud, Q, R);
 
     // blue estimation
-    cv::circle(bg, cv_offset(xEst.head(2), bg.cols, bg.rows), 10, cv::Scalar(255,0,0), -1);
+    cv::circle(bg, cv_offset(xEst.head(2), bg.cols, bg.rows),
+               10, cv::Scalar(255,0,0), -1);
+
     // green groundtruth
-    cv::circle(bg, cv_offset(xTrue.head(2), bg.cols, bg.rows), 10, cv::Scalar(0,255,0), -1);
+    cv::circle(bg, cv_offset(xTrue.head(2), bg.cols, bg.rows),
+               10, cv::Scalar(0,255,0), -1);
+
     // black dead reckoning
-    cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows), 10, cv::Scalar(0, 0, 0), -1);
+    cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows),
+               10, cv::Scalar(0, 0, 0), -1);
+
     // red observation
-    cv::circle(bg, cv_offset(z, bg.cols, bg.rows), 10, cv::Scalar(0, 0, 255), -1);
+    cv::circle(bg, cv_offset(z, bg.cols, bg.rows),
+               10, cv::Scalar(0, 0, 255), -1);
+               
     cv::imshow("ekf", bg);
     cv::waitKey(5);
 
