@@ -14,7 +14,12 @@ The target is to minimize the requirements in this project
     * [Extend kalmam filter](#extended-kalman-filter-localization) [x]
     * [Particle filter](#particle-filter-localization) [x]
     * Histogram filter []
-* Mapping []
+* [Mapping](#mapping)
+    * Gaussian grid map []
+* [SLAM](#SLAM)
+    * FastSLAM 1.0 []
+* [Path Planning](#path-planning)
+    * Dynamic Window Approach []
 
 # Localization
 ## Extend Kalman Filter Localization
