@@ -86,6 +86,27 @@ cv::Point2i cv_offset(
   return output;
 };
 
+void ellipse_drawing(
+  cv::Mat bg_img, Eigen::Matrix2f pest, Eigen::Vector2f center,
+  cv::Scalar ellipse_color=cv::Scalar(0, 0, 255)
+){
+  Eigen::EigenSolver<Eigen::Matrix2f> ces(pest);
+  Eigen::Matrix2f e_value = ces.pseudoEigenvalueMatrix();
+  Eigen::Matrix2f e_vector = ces.pseudoEigenvectors();
+
+  double angle = std::atan2(e_vector(0, 1), e_vector(0, 0));
+  cv::ellipse(
+    bg_img,
+    cv_offset(center, bg_img.cols, bg_img.rows),
+    cv::Size(e_value(0,0)*1000, e_value(1,1)*1000),
+    angle / PI * 180,
+    0,
+    360,
+    ellipse_color,
+    2,
+    4);
+};
+
 int main(){
   float time=0.0;
 
@@ -110,6 +131,11 @@ int main(){
   // Estimation
   Eigen::Vector4f xEst;
   xEst<<0.0,0.0,0.0,0.0;
+
+  std::vector<Eigen::Vector4f> hxDR;
+  std::vector<Eigen::Vector4f> hxTrue;
+  std::vector<Eigen::Vector4f> hxEst;
+  std::vector<Eigen::Vector2f> hz;
 
   Eigen::Matrix4f PEst = Eigen::Matrix4f::Identity();
 
@@ -141,7 +167,6 @@ int main(){
 
   //for visualization
   cv::namedWindow("ekf", cv::WINDOW_NORMAL);
-  cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
   int count = 0;
 
   while(time <= SIM_TIME){
@@ -158,27 +183,42 @@ int main(){
 
     ekf_estimation(xEst, PEst, z, ud, Q, R);
 
-    // blue estimation
-    cv::circle(bg, cv_offset(xEst.head(2), bg.cols, bg.rows),
-               10, cv::Scalar(255,0,0), -1);
+    hxDR.push_back(xDR);
+    hxTrue.push_back(xTrue);
+    hxEst.push_back(xEst);
+    hz.push_back(z);
 
-    // green groundtruth
-    cv::circle(bg, cv_offset(xTrue.head(2), bg.cols, bg.rows),
-               10, cv::Scalar(0,255,0), -1);
+    //visualization
+    cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
+    for(int j=0; j<hxDR.size(); j++){
 
-    // black dead reckoning
-    cv::circle(bg, cv_offset(xDR.head(2), bg.cols, bg.rows),
-               10, cv::Scalar(0, 0, 0), -1);
+      // green groundtruth
+      cv::circle(bg, cv_offset(hxTrue[j].head(2), bg.cols, bg.rows),
+                 7, cv::Scalar(0,255,0), -1);
+
+      // blue estimation
+      cv::circle(bg, cv_offset(hxEst[j].head(2), bg.cols, bg.rows),
+                 10, cv::Scalar(255,0,0), 5);
+
+      // black dead reckoning
+      cv::circle(bg, cv_offset(hxDR[j].head(2), bg.cols, bg.rows),
+                 7, cv::Scalar(0, 0, 0), -1);
+    }
 
     // red observation
-    cv::circle(bg, cv_offset(z, bg.cols, bg.rows),
-               10, cv::Scalar(0, 0, 255), -1);
-               
+    for(int i=0; i<hz.size(); i++){
+      cv::circle(bg, cv_offset(hz[i], bg.cols, bg.rows),
+               7, cv::Scalar(0, 0, 255), -1);
+    }
+
+    ellipse_drawing(bg, PEst.block(0,0,2,2), xEst.head(2));
+
     cv::imshow("ekf", bg);
     cv::waitKey(5);
 
-    //std::string int_count = std::to_string(count);
-    //cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+    // std::string int_count = std::to_string(count);
+    // cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+
     count++;
   }
 }

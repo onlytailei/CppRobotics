@@ -12,10 +12,13 @@ The target is to minimize the requirements in this project
 # Table of Contents
 * [Localization](#localization)
     * [Extend kalmam filter](#extended-kalman-filter-localization) [x]
-    * Partical filter []
+    * [Particle filter](#particle-filter-localization) [x]
     * Histogram filter []
 * Mapping []
 
 # Localization
-## Extend kalman filter
+## Extend Kalman Filter Localization
 ![ekf_gif](./Localization/extended_kalman_filter/ekf.gif)
+
+## Particle Filter Localization
+![pf_gif](./Localization/particle_filter/pf.gif)
