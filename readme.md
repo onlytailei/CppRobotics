@@ -30,4 +30,4 @@ The target is to minimize the requirements in this project
 
 # Path Planning
 ## Dynamic Window Approach
-![dwa_gif](./Localization/dynamic_window_approach/dwa.gif)
+![dwa_gif](./PathPlanning/dynamic_window_approach/dwa.gif)
