@@ -11,15 +11,15 @@ The target is to minimize the requirements in this project
 
 # Table of Contents
 * [Localization](#localization)
-    * [Extended kalmam filter](#extended-kalman-filter-localization) [x]
-    * [Particle filter](#particle-filter-localization) [x]
-    * Histogram filter []
+    * [Extended kalmam filter](#extended-kalman-filter-localization)
+    * [Particle filter](#particle-filter-localization)
+    * Histogram filter
 * [Mapping](#mapping)
-    * Gaussian grid map []
+    * Gaussian grid map
 * [SLAM](#SLAM)
-    * FastSLAM 1.0 []
+    * FastSLAM 1.0
 * [Path Planning](#path-planning)
-    * Dynamic Window Approach [#dynamic-window-approach] [x]
+    * [Dynamic Window Approach](#dynamic-window-approach)
 
 # Localization
 ## Extended Kalman Filter Localization
