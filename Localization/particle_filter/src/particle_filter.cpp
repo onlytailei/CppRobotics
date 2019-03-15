@@ -260,7 +260,7 @@ int main(){
   std::uniform_real_distribution<> uni_d{1.0, 2.0};
 
   //for visualization
-  cv::namedWindow("ekf", cv::WINDOW_NORMAL);
+  cv::namedWindow("pf", cv::WINDOW_NORMAL);
   int count = 0;
 
   while(time <= SIM_TIME){
@@ -296,7 +296,7 @@ int main(){
     // visualization
     cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
     for(int j=0; j<hxDR.size(); j++){
-      
+
       // // green groundtruth
       cv::circle(bg, cv_offset(hxTrue[j].head(2), bg.cols, bg.rows),
                  7, cv::Scalar(0,255,0), -1);
@@ -331,7 +331,7 @@ int main(){
 
     ellipse_drawing(bg, PEst.block(0,0,2,2), xEst.head(2));
 
-    cv::imshow("ekf", bg);
+    cv::imshow("pf", bg);
     cv::waitKey(5);
 
     // std::string int_count = std::to_string(count);

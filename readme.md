@@ -19,7 +19,7 @@ The target is to minimize the requirements in this project
 * [SLAM](#SLAM)
     * FastSLAM 1.0 []
 * [Path Planning](#path-planning)
-    * Dynamic Window Approach []
+    * Dynamic Window Approach [#dynamic-window-approach] [x]
 
 # Localization
 ## Extended Kalman Filter Localization
@@ -27,3 +27,7 @@ The target is to minimize the requirements in this project
 
 ## Particle Filter Localization
 ![pf_gif](./Localization/particle_filter/pf.gif)
+
+# Path Planning
+## Dynamic Window Approach
+![dwa_gif](./Localization/particle_filter/dwa.gif)
