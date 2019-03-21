@@ -8,7 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <math.h>
+#include <cmath>
 #include <Eigen/Eigen>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
