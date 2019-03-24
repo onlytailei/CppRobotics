@@ -13,6 +13,8 @@
 #include <boost/math/interpolators/cubic_b_spline.hpp>
 
 #define PI 3.141592653
+using TrajState = std::array<float, 3>;
+using Traj = std::vector<TrajState>;
 
 class State{
   public:
@@ -41,8 +43,9 @@ class MotionModel{
     MotionModel(float base_l_, float ds_, State state_):
       base_l(base_l_), ds(ds_), state(state_){};
     void update(float v_, float delta, float dt);
-    void generate_trajectory(float s, float k0, float k1,
-                             float k2, float k3, float k4);
+    Traj generate_trajectory(float, std::vector<float>);
+
+    void generate_last_state(float, std::Vector<float>);
   // private:
 
 };
@@ -60,21 +63,43 @@ void MotionModel::update(float v_, float delta, float dt){
 void MotionModel::generate_trajectory(float s, std::vector<float> kk){
   // NOTE boost cubic b ask for at least 5 points
   // s: distance
-  // kk: yaw velocity as specific position
+  // kk: steering of becycle model as specific position
   float n = s / ds;
   float horizon = s / state.v;
-  // std::vector<float> tk{0, horizon/4, horizon/2, horizon*3/4, horizon};
-  // std::vector<float> kk{k0, k1, k2, k3, kf};
 
   boost::math::cubic_b_spline<float> spline(
     kk.data(), kk.size(), 0, horizon/kk.size());
 
+  Traj output;
+
   for(float i=0.0; i<horizon; i+=horizon/n){
       float kp = spline(i);
-      // std::cout << i << " " <<horizon << std::endl;
-      std::cout << kp << std::endl;
-  }
+      update(state.v, kp, horizon/n);
+      std::array<float, 3> xyyaw{state.x state.y, state.z};
+      output.push_back(xyyaw);
+    }
+    return output;
+}
 
+void MotionModel::generate_last_state(float s, std::vector<float> kk){
+  // NOTE boost cubic b ask for at least 5 points
+  // s: distance
+  // kk: steering of becycle model as specific position
+  float n = s / ds;
+  float horizon = s / state.v;
+
+  boost::math::cubic_b_spline<float> spline(
+    kk.data(), kk.size(), 0, horizon/kk.size());
+
+  Traj output;
+
+  for(float i=0.0; i<horizon; i+=horizon/n){
+      float kp = spline(i);
+      update(state.v, kp, horizon/n);
+      Trajstate xyyaw{state.x state.y, state.z};
+      output.push_back(xyyaw);
+    }
+    return output;
 }
 
 #endif

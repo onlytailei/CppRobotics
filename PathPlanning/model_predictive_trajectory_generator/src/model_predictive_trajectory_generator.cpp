@@ -21,5 +21,5 @@
 int main(){
   State state(0, 0, 0, CONST_V);
   MotionModel motion_model(L, DS, state);
-  motion_model.generate_trajectory(6, 0.1, 0.2, 0.3, 0.4, 0.5);
+  motion_model.generate_trajectory(6, {0.0, 0.1, 0.2, 0.3, 0.4});
 }
