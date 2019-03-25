@@ -228,40 +228,6 @@ int main(){
         }
     }
 
-  //
-  //     // // green groundtruth
-  //     cv::circle(bg, cv_offset(hxTrue[j].head(2), bg.cols, bg.rows),
-  //                7, cv::Scalar(0,255,0), -1);
-  //
-  //     // blue estimation
-  //     cv::circle(bg, cv_offset(hxEst[j].head(2), bg.cols, bg.rows),
-  //                10, cv::Scalar(255,0,0), 5);
-  //
-  //     // black dead reckoning
-  //     cv::circle(bg, cv_offset(hxDR[j].head(2), bg.cols, bg.rows),
-  //                7, cv::Scalar(0, 0, 0), -1);
-  //   }
-  //
-  //
-  //   for(int j=0; j<px.cols(); j++){
-  //     cv::circle(bg, cv_offset(px.col(j).head(2), bg.cols, bg.rows),
-  //                3, cv::Scalar(0, 0, 255), -1);
-  //   }
-  //
-  //   for(int i=0; i<RFID.rows(); i++){
-  //     cv::circle(bg, cv_offset(RFID.row(i), bg.cols, bg.rows),
-  //                20, cv::Scalar(127, 0, 255), -1);
-  //   }
-  //   for(int i=0; i<z.size(); i++){
-  //     cv::line(
-  //       bg,
-  //       cv_offset(z[i].tail(2), bg.cols, bg.rows),
-  //       cv_offset(hxEst.back().head(2), bg.cols, bg.rows),
-  //       cv::Scalar(0, 0, 0),
-  //       5);
-  //   }
-  //
-    // ellipse_drawing(bg, PEst.block(0,0,2,2), xEst.head(2));
 
     cv::imshow("dwa", bg);
     cv::waitKey(5);

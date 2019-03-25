@@ -98,15 +98,30 @@ float selection_learning_param(
 };
 
 
-Traj optimize_trajectory(MotionModel m_model,
-                         TrajState target_state,
-                         Parameter p_,
-                         int max_iter,
-                         float cost_th_,
-                         std::vector<float> h_step_){
-  Traj sample_traj;
+cv::Point2i cv_offset(
+    float x, float y, int image_width=2000, int image_height=2000){
+  cv::Point2i output;
+  output.x = int(x * 100) + image_width/4;
+  output.y = image_height - int(y * 100) - image_height/3;
+  return output;
+};
+
+
+int main(){
+  State init_state(0, 0, 0, CONST_V);
+  TrajState target_state(5, 2.0, 0);
+  MotionModel m_model(L, DS, init_state);
+
+  Parameter p_(6, {{0,0,0}});
+  float cost_th_ = 0.05;
+  std::vector<float> h_step_{0.2, 0.005, 0.005};
+  int max_iter = 100;
+
+  cv::namedWindow("mptg", cv::WINDOW_NORMAL);
+  int count = 0;
+
   for(int i=0; i<max_iter; i++){
-    sample_traj = m_model.generate_trajectory(p_);
+    Traj sample_traj = m_model.generate_trajectory(p_);
     TrajState dc = calc_diff(target_state, sample_traj.back());
     Eigen::Vector3f dc_vct;
     dc_vct<< dc.x , dc.y, dc.yaw;
@@ -119,33 +134,36 @@ Traj optimize_trajectory(MotionModel m_model,
     Eigen::Matrix3f J = calc_J(m_model, target_state, p_, h_step_);
     Eigen::Vector3f dp = - J.inverse() * dc_vct;
 
-    float alpha = selection_learning_param(m_model, dp, p_, target_state);
 
-    std::cout<<J<<std::endl;
-    std::cout<<dc_vct[0]<<" "<<dc_vct[1] <<" "<<dc_vct[2]<<std::endl;
-    std::cout<<dp[0]<<" "<<dp[1] <<" "<<dp[2]<<std::endl;
-    std::cout<<alpha<<std::endl;
+    float alpha = selection_learning_param(m_model, dp, p_, target_state);
 
     p_.distance += alpha * dp(0);
     p_.steering_sequence[1] += alpha * dp(1);
     p_.steering_sequence[2] += alpha * dp(2);
-    std::cout << "param " << p_.distance << " "<< p_.steering_sequence[1] << " "<< p_.steering_sequence[2] <<std::endl;
+
+    // visualization
+    cv::Mat bg(500, 1000, CV_8UC3, cv::Scalar(255, 255, 255));
+    for(int i=1; i<sample_traj.size(); i++){
+      cv::line(
+        bg,
+        cv_offset(sample_traj[i-1].x, sample_traj[i-1].y, bg.cols, bg.rows),
+        cv_offset(sample_traj[i].x, sample_traj[i].y, bg.cols, bg.rows),
+        cv::Scalar(0, 0, 0),
+        5);
+    }
+
+    cv::circle(bg, cv_offset(target_state.x, target_state.y, bg.cols, bg.rows),
+               20, cv::Scalar(255,0,0), 5);
+    cv::circle(bg, cv_offset(init_state.x, init_state.y, bg.cols, bg.rows),
+               20, cv::Scalar(0,0,255), 5);
+
+    cv::imshow("mptg", bg);
+    cv::waitKey(5);
+
+    // std::string int_count = std::to_string(count);
+    // cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+
+    count++;
+
   }
-
-  return sample_traj;
-};
-
-
-int main(){
-  State init_state(0, 0, 0, CONST_V);
-  TrajState target(5, 2.0, 0);
-  MotionModel m_model(L, DS, init_state);
-
-  Parameter init_p(6, {{0,0,0}});
-  float cost_th = 0.1;
-  std::vector<float> h_step{0.5, 0.02, 0.02};
-  int max_iter = 100;
-
-  Traj final_traj = optimize_trajectory(m_model, target, init_p,
-                         max_iter, cost_th, h_step);
 };
