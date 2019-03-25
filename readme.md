@@ -20,7 +20,7 @@ The target is to minimize the requirements in this project
     * FastSLAM 1.0
 * [Path Planning](#path-planning)
     * [Dynamic Window Approach](#dynamic-window-approach)
-    * [Model Predictive Trajectory](#model_predictive_trajectory)
+    * [Model Predictive Trajectory Generator](#model_predictive_trajectory_generator)
 
 # Localization
 ## Extended Kalman Filter Localization
@@ -33,5 +33,5 @@ The target is to minimize the requirements in this project
 ## Dynamic Window Approach
 ![dwa_gif](./PathPlanning/dynamic_window_approach/dwa.gif)
 
-## Model Predictive Trajectory
+## Model Predictive Trajectory Generator
 ![mptg_gif](./PathPlanning/model_predictive_trajectory_generator/mptg.gif)
