@@ -12,5 +12,5 @@ include_directories(./include)
 # include_directories(/home/tai/Software/boost_1_65_0)
 
 add_executable(mptg src/model_predictive_trajectory_generator.cpp)
-# target_link_libraries(mptg ${OpenCV_LIBS} boost_math_tr1f)
 target_link_libraries(mptg ${OpenCV_LIBS})
+# target_link_libraries(mptg ${OpenCV_LIBS} boost_math_tr1f)

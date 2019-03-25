@@ -34,7 +34,7 @@ Eigen::Vector3f error_vector(MotionModel m_model_, Parameter p, TrajState target
     d_vct<< d_error.x , d_error.y, d_error.yaw;
     return d_vct;
 
-}
+};
 
 Eigen::Matrix3f calc_J(MotionModel m_model_,
                        TrajState target_,
@@ -58,10 +58,10 @@ Eigen::Matrix3f calc_J(MotionModel m_model_,
     Eigen::Vector3f d1 = (d10_vct - d11_vct) / (2.0 * h[1]);
 
     Parameter p20 = p;
-    p10.steering_sequence[2] = p.steering_sequence[2] + h[2];
+    p20.steering_sequence[2] = p.steering_sequence[2] + h[2];
     Eigen::Vector3f d20_vct = error_vector(m_model_, p20, target_);
     Parameter p21 = p;
-    p11.steering_sequence[2] = p.steering_sequence[2] - h[2];
+    p21.steering_sequence[2] = p.steering_sequence[2] - h[2];
     Eigen::Vector3f d21_vct = error_vector(m_model_, p21, target_);
     Eigen::Vector3f d2 = (d20_vct - d21_vct) / (2.0 * h[2]);
 
@@ -69,7 +69,7 @@ Eigen::Matrix3f calc_J(MotionModel m_model_,
     J<<d0, d1, d2;
     return J;
 
-  }
+};
 
 
 float selection_learning_param(
@@ -95,7 +95,7 @@ float selection_learning_param(
     }
 
     return mina;
-}
+};
 
 
 Traj optimize_trajectory(MotionModel m_model,
@@ -111,20 +111,25 @@ Traj optimize_trajectory(MotionModel m_model,
     Eigen::Vector3f dc_vct;
     dc_vct<< dc.x , dc.y, dc.yaw;
     float cost = std::sqrt(std::pow(dc.x, 2)+std::pow(dc.y, 2)+std::pow(dc.yaw, 2));
-    std::cout << "start gene" << std::endl;
     if (cost < cost_th_){
       std::cout << "find the traj under the cost threshold" << std::endl;
       break;
     }
 
     Eigen::Matrix3f J = calc_J(m_model, target_state, p_, h_step_);
-    Eigen::Vector3f dp = J.inverse() * dc_vct;
+    Eigen::Vector3f dp = - J.inverse() * dc_vct;
 
     float alpha = selection_learning_param(m_model, dp, p_, target_state);
 
-    p_.distance += alpha * dp[0];
-    p_.steering_sequence[1] += alpha * dp[1];
-    p_.steering_sequence[2] += alpha * dp[2];
+    std::cout<<J<<std::endl;
+    std::cout<<dc_vct[0]<<" "<<dc_vct[1] <<" "<<dc_vct[2]<<std::endl;
+    std::cout<<dp[0]<<" "<<dp[1] <<" "<<dp[2]<<std::endl;
+    std::cout<<alpha<<std::endl;
+
+    p_.distance += alpha * dp(0);
+    p_.steering_sequence[1] += alpha * dp(1);
+    p_.steering_sequence[2] += alpha * dp(2);
+    std::cout << "param " << p_.distance << " "<< p_.steering_sequence[1] << " "<< p_.steering_sequence[2] <<std::endl;
   }
 
   return sample_traj;
@@ -139,8 +144,8 @@ int main(){
   Parameter init_p(6, {{0,0,0}});
   float cost_th = 0.1;
   std::vector<float> h_step{0.5, 0.02, 0.02};
-  int max_iter = 5;
+  int max_iter = 100;
 
   Traj final_traj = optimize_trajectory(m_model, target, init_p,
                          max_iter, cost_th, h_step);
-}
+};

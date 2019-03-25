@@ -82,6 +82,7 @@ class MotionModel{
     MotionModel(float base_l_, float ds_, State state_):
       base_l(base_l_), ds(ds_), state(state_){};
     void update(float v_, float delta, float dt);
+    State update(State state_, float delta, float dt);
     Traj generate_trajectory(Parameter);
     TrajState generate_last_state(Parameter);
 
@@ -93,6 +94,14 @@ void MotionModel::update(float v_, float delta, float dt){
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / base_l * std::tan(delta) * dt;
     state.yaw = YAW_P2P(state.yaw);
+};
+
+State MotionModel::update(State state_, float delta, float dt){
+    state_.x = state_.x + state_.v * std::cos(state_.yaw) * dt;
+    state_.y = state_.y + state_.v * std::sin(state_.yaw) * dt;
+    state_.yaw = state_.yaw + state_.v / base_l * std::tan(delta) * dt;
+    state_.yaw = YAW_P2P(state_.yaw);
+    return state_;
 };
 
 Traj MotionModel::generate_trajectory(Parameter p){
@@ -107,11 +116,12 @@ Traj MotionModel::generate_trajectory(Parameter p){
     p.steering_sequence);
 
   Traj output;
+  State state_ = state;
 
   for(float i=0.0; i<horizon; i+=horizon/n){
       float kp = interp_refer(spline, i);
-      update(state.v, kp, horizon/n);
-      TrajState xyyaw{state.x, state.y, state.yaw};
+      state_ = update(state_, kp, horizon/n);
+      TrajState xyyaw{state_.x, state_.y, state_.yaw};
       output.push_back(xyyaw);
   }
   return output;
@@ -128,11 +138,12 @@ TrajState MotionModel::generate_last_state(Parameter p){
     {0, horizon/2, horizon},
     p.steering_sequence);
 
+  State state_ = state;
   for(float i=0.0; i<horizon; i+=horizon/n){
       float kp = interp_refer(spline, i);
-      update(state.v, kp, horizon/n);
+      state_ = update(state_, kp, horizon/n);
   }
-  return TrajState{state.x, state.y, state.yaw};
+  return TrajState{state_.x, state_.y, state_.yaw};
 }
 
 
