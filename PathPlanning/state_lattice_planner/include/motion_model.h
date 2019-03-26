@@ -9,22 +9,23 @@
 #define _MOTION_MODEL_H
 
 #include <iostream>
-#include <vector>
-#include <array>
 #include <cmath>
 #include <cfenv>
-#include <Eigen/Eigen>
+// #include <boost/math/interpolators/cubic_b_spline.hpp>
 
-#define YAW_P2P(angle) std::fmod((angle+M_PI), 2*M_PI)-M_PI
+// #define PI 3.141592
+#define YAW_P2P(angle) std::fmod((angle+(float)M_PI), 2*M_PI)-M_PI
 
 struct Parameter{
-  float distance;
+  float distance=0;
+  // at least 5 number
   std::array<float, 3> steering_sequence{{0,0,0}};
   Parameter(float distance_, std::array<float, 3> steering_sequence_){
     distance = distance_;
     steering_sequence = steering_sequence_;
   };
 };
+
 
 struct State{
   float x;
@@ -111,7 +112,7 @@ Traj MotionModel::generate_trajectory(Parameter p){
   //   p.steering_sequence.data(), p.steering_sequence.size(),
   //   0, horizon/p.steering_sequence.size());
   std::vector<float> spline = quadrati_interpolation(
-    {{0, horizon/2, horizon}},
+    {0, horizon/2, horizon},
     p.steering_sequence);
 
   Traj output;
@@ -134,7 +135,7 @@ TrajState MotionModel::generate_last_state(Parameter p){
   //   p.steering_sequence.data(), p.steering_sequence.size(),
   //   0, horizon/p.steering_sequence.size());
   std::vector<float> spline = quadrati_interpolation(
-    {{0, horizon/2, horizon}},
+    {0, horizon/2, horizon},
     p.steering_sequence);
 
   State state_ = state;
