@@ -52,12 +52,12 @@ State motion(State x, Control u, float dt){
 
 Window calc_dynamic_window(State x, Config config){
 
-  return {
+  return {{
     std::max((x[3] - config.max_accel * config.dt), config.min_speed),
     std::min((x[3] + config.max_accel * config.dt), config.max_speed),
     std::max((x[4] - config.max_dyawrate * config.dt), -config.max_yawrate),
     std::min((x[4] + config.max_dyawrate * config.dt), config.max_yawrate)
-  };
+  }};
 };
 
 
@@ -137,7 +137,7 @@ Traj calc_final_input(
 
             if (min_cost >= final_cost){
                 min_cost = final_cost;
-                min_u = Control{v, y};
+                min_u = Control{{v, y}};
                 best_traj = traj;
             }
         }
@@ -166,8 +166,8 @@ cv::Point2i cv_offset(
 
 
 int main(){
-  State x({0.0, 0.0, PI/8.0, 0.0, 0.0});
-  Point goal({10.0,10.0});
+  State x({{0.0, 0.0, PI/8.0, 0.0, 0.0}});
+  Point goal({{10.0,10.0}});
   Obstacle ob({
     {-1, -1},
     {0, 2},
@@ -181,7 +181,7 @@ int main(){
     {12.0, 12.0}
   });
 
-  Control u({0.0, 0.0});
+  Control u({{0.0, 0.0}});
   Config config;
   Traj traj;
   traj.push_back(x);

@@ -51,6 +51,8 @@ struct TrajState{
 };
 
 using Traj = std::vector<TrajState>;
+using StateList = std::vector<TrajState>;
+using ParameterList = std::vector<Parameter>;
 
 std::vector<float> quadrati_interpolation(
     std::array<float, 3> x, std::array<float, 3> y){

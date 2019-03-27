@@ -12,7 +12,21 @@
 #include <cmath>
 #include <cfenv>
 #include <Eigen/Eigen>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <sys/time.h>
 #include "motion_model.h"
+
+
+
+cv::Point2i cv_offset(
+    float x, float y, int image_width=2000, int image_height=2000){
+  cv::Point2i output;
+  output.x = int(x * 100) + image_width/4;
+  output.y = image_height - int(y * 100) - image_height/2;
+  return output;
+};
 
 class TrajectoryOptimizer{
   public:
@@ -20,7 +34,7 @@ class TrajectoryOptimizer{
     Parameter p;
     TrajState target;
 
-    Traj optimizer_traj(int, float, std::vector<float>);
+    Traj optimizer_traj(int, float, std::vector<float>, bool=false, bool=false);
     TrajectoryOptimizer(MotionModel m_model_,
                         Parameter init_p_,
                         TrajState target_):
@@ -36,11 +50,57 @@ class TrajectoryOptimizer{
 };
 
 Traj TrajectoryOptimizer::optimizer_traj(
-      int max_iter, float cost_th, std::vector<float> h_step){
+      int max_iter, float cost_th, std::vector<float> h_step,
+      bool visualize, bool save){
+
+  int count = 0;
+  if (visualize){
+    cv::namedWindow("mptg", cv::WINDOW_NORMAL);
+  }
 
   Traj sample_traj;
   for(int i=0; i<max_iter; i++){
     sample_traj = m_model.generate_trajectory(p);
+
+    // visualize block
+    {
+      cv::Mat bg(5000, 5000, CV_8UC3, cv::Scalar(255, 255, 255));
+      for(unsigned int i=1; i<sample_traj.size(); i++){
+        cv::line(
+          bg,
+          cv_offset(sample_traj[i-1].x, sample_traj[i-1].y, bg.cols, bg.rows),
+          cv_offset(sample_traj[i].x, sample_traj[i].y, bg.cols, bg.rows),
+          cv::Scalar(0, 0, 0),
+          10);
+      }
+
+      cv::circle(bg, cv_offset(target.x, target.y, bg.cols, bg.rows),
+                 30, cv::Scalar(255,0,0), 5);
+      cv::circle(bg, cv_offset(m_model.state.x, m_model.state.y, bg.cols, bg.rows),
+                 30, cv::Scalar(0,0,255), 5);
+
+      cv::arrowedLine(
+        bg,
+        cv_offset(target.x, target.y, bg.cols, bg.rows),
+        cv_offset(target.x + std::cos(target.yaw), target.y + std::sin(target.yaw), bg.cols, bg.rows),
+        cv::Scalar(255,0,255),
+        15);
+
+
+      if (visualize){
+        cv::imshow("mptg", bg);
+        cv::waitKey(5);
+      }
+
+      if (save){
+          struct timeval tp;
+          gettimeofday(&tp, NULL);
+          long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+          std::string int_count = std::to_string(ms);
+          cv::imwrite("./pngs/"+int_count+".png", bg);
+      }
+    }
+
     TrajState dc = calc_diff(sample_traj.back());
     Eigen::Vector3f dc_vct;
     dc_vct<< dc.x , dc.y, dc.yaw;
@@ -60,6 +120,7 @@ Traj TrajectoryOptimizer::optimizer_traj(
     p.distance += alpha * dp(0);
     p.steering_sequence[1] += alpha * dp(1);
     p.steering_sequence[2] += alpha * dp(2);
+    count++;
 
   }
   return sample_traj;

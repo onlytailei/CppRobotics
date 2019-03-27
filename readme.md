@@ -21,6 +21,7 @@ The target is to minimize the requirements in this project
 * [Path Planning](#path-planning)
     * [Dynamic Window Approach](#dynamic-window-approach)
     * [Model Predictive Trajectory Generator](#model_predictive_trajectory_generator)
+    * [State Lattice Planner](#state lattice planner)
 
 # Localization
 ## Extended Kalman Filter Localization
@@ -35,3 +36,6 @@ The target is to minimize the requirements in this project
 
 ## Model Predictive Trajectory Generator
 ![mptg_gif](./PathPlanning/model_predictive_trajectory_generator/mptg.gif)
+
+## State Lattice Planner
+![mptg_gif](./PathPlanning/state_lattice_planner/slp.gif)
