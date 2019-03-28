@@ -55,7 +55,7 @@ Eigen::Vector2f observation_model(Eigen::Vector4f x){
   return H_ * x;
 };
 
-Eigen::Matrix<float, 2, 4> jacobH(Eigen::Vector4f x){
+Eigen::Matrix<float, 2, 4> jacobH(){
   Eigen::Matrix<float, 2, 4> jH_;
   jH_<< 1, 0, 0, 0,
         0, 1, 0, 0;
@@ -69,7 +69,7 @@ void ekf_estimation(Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst,
     Eigen::Matrix4f jF = jacobF(xPred, u);
     Eigen::Matrix4f PPred = jF * PEst * jF.transpose() + Q;
 
-    Eigen::Matrix<float, 2, 4> jH = jacobH(xPred);
+    Eigen::Matrix<float, 2, 4> jH = jacobH();
     Eigen::Vector2f zPred = observation_model(xPred);
     Eigen::Vector2f y = z - zPred;
     Eigen::Matrix2f S = jH * PPred * jH.transpose() + R;
@@ -190,7 +190,7 @@ int main(){
 
     //visualization
     cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
-    for(int j=0; j<hxDR.size(); j++){
+    for(unsigned int j=0; j<hxDR.size(); j++){
 
       // green groundtruth
       cv::circle(bg, cv_offset(hxTrue[j].head(2), bg.cols, bg.rows),
@@ -206,7 +206,7 @@ int main(){
     }
 
     // red observation
-    for(int i=0; i<hz.size(); i++){
+    for(unsigned int i=0; i<hz.size(); i++){
       cv::circle(bg, cv_offset(hz[i], bg.cols, bg.rows),
                7, cv::Scalar(0, 0, 255), -1);
     }

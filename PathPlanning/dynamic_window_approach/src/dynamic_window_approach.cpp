@@ -68,7 +68,7 @@ Traj calc_trajectory(
     traj.push_back(x);
     float time = 0.0;
     while (time <= config.predict_time){
-        x = motion(x, std::array<float, 2>{v, y}, config.dt);
+        x = motion(x, std::array<float, 2>{{v, y}}, config.dt);
         traj.push_back(x);
         time += config.dt;
     }
@@ -81,8 +81,8 @@ float calc_obstacle_cost(Traj traj, Obstacle ob, Config config){
     int skip_n = 2;
     float minr = std::numeric_limits<float>::max();
 
-    for (int ii=0; ii<traj.size(); ii+=skip_n){
-        for (int i=0; i< ob.size(); i++){
+    for (unsigned int ii=0; ii<traj.size(); ii+=skip_n){
+        for (unsigned int i=0; i< ob.size(); i++){
             float ox = ob[i][0];
             float oy = ob[i][1];
             float dx = traj[ii][0] - ox;
@@ -169,16 +169,16 @@ int main(){
   State x({{0.0, 0.0, PI/8.0, 0.0, 0.0}});
   Point goal({{10.0,10.0}});
   Obstacle ob({
-    {-1, -1},
-    {0, 2},
-    {4.0, 2.0},
-    {5.0, 4.0},
-    {5.0, 5.0},
-    {5.0, 6.0},
-    {5.0, 9.0},
-    {8.0, 9.0},
-    {7.0, 9.0},
-    {12.0, 12.0}
+    {{-1, -1}},
+    {{0, 2}},
+    {{4.0, 2.0}},
+    {{5.0, 4.0}},
+    {{5.0, 5.0}},
+    {{5.0, 6.0}},
+    {{5.0, 9.0}},
+    {{8.0, 9.0}},
+    {{7.0, 9.0}},
+    {{12.0, 12.0}}
   });
 
   Control u({{0.0, 0.0}});
@@ -201,11 +201,11 @@ int main(){
     cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
     cv::circle(bg, cv_offset(goal[0], goal[1], bg.cols, bg.rows),
                30, cv::Scalar(255,0,0), 5);
-    for(int j=0; j<ob.size(); j++){
+    for(unsigned int j=0; j<ob.size(); j++){
       cv::circle(bg, cv_offset(ob[j][0], ob[j][1], bg.cols, bg.rows),
                  20, cv::Scalar(0,0,0), -1);
     }
-    for(int j=0; j<ltraj.size(); j++){
+    for(unsigned int j=0; j<ltraj.size(); j++){
       cv::circle(bg, cv_offset(ltraj[j][0], ltraj[j][1], bg.cols, bg.rows),
                  7, cv::Scalar(0,255,0), -1);
     }
@@ -222,7 +222,7 @@ int main(){
 
     if (std::sqrt(std::pow((x[0] - goal[0]), 2) + std::pow((x[1] - goal[1]), 2)) <= config.robot_radius){
         terminal = true;
-        for(int j=0; j<traj.size(); j++){
+        for(unsigned int j=0; j<traj.size(); j++){
           cv::circle(bg, cv_offset(traj[j][0], traj[j][1], bg.cols, bg.rows),
                      7, cv::Scalar(0,0,255), -1);
         }

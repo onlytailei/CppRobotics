@@ -40,16 +40,6 @@ Eigen::Vector4f motion_model(Eigen::Vector4f x, Eigen::Vector2f u){
   return F_ * x + B_ * u;
 };
 
-Eigen::Matrix4f jacobF(Eigen::Vector4f x, Eigen::Vector2f u){
-  Eigen::Matrix4f jF_ = Eigen::Matrix4f::Identity();
-  float yaw = x(2);
-  float v = u(0);
-  jF_(0,2) = -DT * v * std::sin(yaw);
-  jF_(0,3) = DT * std::cos(yaw);
-  jF_(1,2) = DT * v * std::cos(yaw);
-  jF_(1,3) = DT * std::sin(yaw);
-  return jF_;
-};
 
 //observation mode H
 Eigen::Vector2f observation_model(Eigen::Vector4f x){
@@ -59,12 +49,6 @@ Eigen::Vector2f observation_model(Eigen::Vector4f x){
   return H_ * x;
 };
 
-Eigen::Matrix<float, 2, 4> jacobH(Eigen::Vector4f x){
-  Eigen::Matrix<float, 2, 4> jH_;
-  jH_<< 1, 0, 0, 0,
-        0, 1, 0, 0;
-  return jH_;
-};
 
 // TODO gaussian likelihood
 float gauss_likelihood(float x, float sigma){
@@ -79,7 +63,7 @@ Eigen::Matrix4f calc_covariance(
     Eigen::Matrix<float, NP, 1> pw){
 
   Eigen::Matrix4f PEst_ = Eigen::Matrix4f::Zero();
-  for(int i=0; i++; i<px.cols()){
+  for(int i=0; i<px.cols(); i++){
       Eigen::Vector4f dx = px.col(i) - xEst;
       PEst_ += pw(i) * dx * dx.transpose();
   }
@@ -106,7 +90,7 @@ void pf_localization(
 
       x = motion_model(x, ud);
 
-      for(int i=0; i<z.size(); i++){
+      for(unsigned int i=0; i<z.size(); i++){
           Eigen::RowVector3f item = z[i];
           float dx = x(0) - item(1);
           float dy = x(1) - item(2);
@@ -174,7 +158,7 @@ cv::Point2i cv_offset(
 
 void ellipse_drawing(
   cv::Mat bg_img, Eigen::Matrix2f pest, Eigen::Vector2f center,
-  cv::Scalar ellipse_color=(0, 0, 255)
+  cv::Scalar ellipse_color={0, 0, 255}
 ){
   Eigen::EigenSolver<Eigen::Matrix2f> ces(pest);
   Eigen::Matrix2f e_value = ces.pseudoEigenvalueMatrix();
@@ -295,7 +279,7 @@ int main(){
 
     // visualization
     cv::Mat bg(3500,3500, CV_8UC3, cv::Scalar(255,255,255));
-    for(int j=0; j<hxDR.size(); j++){
+    for(unsigned int j=0; j<hxDR.size(); j++){
 
       // // green groundtruth
       cv::circle(bg, cv_offset(hxTrue[j].head(2), bg.cols, bg.rows),
@@ -320,7 +304,7 @@ int main(){
       cv::circle(bg, cv_offset(RFID.row(i), bg.cols, bg.rows),
                  20, cv::Scalar(127, 0, 255), -1);
     }
-    for(int i=0; i<z.size(); i++){
+    for(unsigned int i=0; i<z.size(); i++){
       cv::line(
         bg,
         cv_offset(z[i].tail(2), bg.cols, bg.rows),
