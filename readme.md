@@ -3,7 +3,6 @@
 This is the cpp implementation of the [PythonRobotics](https://github.com/AtsushiSakai/PythonRobotics)
 
 ## Requirment
-The target is to minimize the requirements in this project
 - cmake
 - opencv 3.3
 - Eigen 3
@@ -44,15 +43,18 @@ The target is to minimize the requirements in this project
 ## Dynamic Window Approach
 * blue circle: the target point
 * red circle: the robot
+
 ![dwa_gif](./PathPlanning/dynamic_window_approach/dwa.gif)
 
 ## Model Predictive Trajectory Generator
 This part is based on the bicycle motion model.
 * blue circle: the target point
 * red circle: the initial point
+
 ![mptg_gif](./PathPlanning/model_predictive_trajectory_generator/mptg.gif)
 
 ## State Lattice Planner
 * blue circle: the target point
 * red circle: the initial point
+
 ![mptg_gif](./PathPlanning/state_lattice_planner/slp.gif)
