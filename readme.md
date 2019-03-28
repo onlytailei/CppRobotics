@@ -7,6 +7,14 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 - opencv 3.3
 - Eigen 3
 
+## Build
+     $ export CPP_ROBOTICS=/path/to/root_of_this_repo
+     $ cd /path/to/specific/method
+     $ mkdir build
+     $ cd build
+     $ cmake ../
+     $ make -j 8
+
 
 # Table of Contents
 * [Localization](#localization)
