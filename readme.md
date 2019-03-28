@@ -20,8 +20,8 @@ The target is to minimize the requirements in this project
     * FastSLAM 1.0
 * [Path Planning](#path-planning)
     * [Dynamic Window Approach](#dynamic-window-approach)
-    * [Model Predictive Trajectory Generator](#model_predictive_trajectory_generator)
-    * [State Lattice Planner](#state lattice planner)
+    * [Model Predictive Trajectory Generator](#model-predictive-trajectory-generator)
+    * [State Lattice Planner](#state-lattice-lanner)
 
 # Localization
 ## Extended Kalman Filter Localization
