@@ -72,12 +72,43 @@ StateList calc_biased_polar_states(float goal_angle, int ns, int nxy,
     }
   }
 
+  std::vector<float> csumnav;
+  float cum_temp = 0;
+  for(int i=0; i<ns-1; i++){
+    cnav[i] = (cnav_max - cnav[i]) / (cnav_max * ns - cnav_sum);
+    cum_temp += cnav[i];
+    csumnav.push_back(cum_temp);
+  }
 
-  //StateList states = sample_states(angle_samples, a_min, a_max, d, p_max, p_min, nh);
-  StateList states;
-  // TODO not yet finish
+  int li = 0;
+  std::vector<float> angle_samples;
+  for(int i=0; i<nxy; i++){
+    for(int j=li; j<ns-1; j++){
+      if (j*1.0/ns >= i*1.0/(nxy -1)){
+        angle_samples.push_back(csumnav[j]);
+        li = j - 1;
+        break;
+      }
+    }
+  }
+
+  StateList states = sample_states(angle_samples, a_min, a_max, d, p_max, p_min, nh);
   return states;
 };
+
+StateList calc_lane_states(float l_center, float l_heading, float l_width, float v_width, float d, int nxy){
+  float xc = std::cos(l_heading) * d + std::sin(l_heading) * l_center;
+  float yc = std::sin(l_heading) * d + std::cos(l_heading) * l_center;
+
+  StateList states;
+  for(int i=0; i<nxy; i++){
+    float delta = -0.5 * (l_width - v_width) + (l_width - v_width) * i / (nxy -1);
+    float xf = xc - delta * std::sin(l_heading);
+    float yf = yc + delta * std::cos(l_heading);
+    states.push_back(TrajState(xf, yf, l_heading));
+  }
+  return states;
+}
 
 Parameter search_nearest_one_from_lookuptable(TrajState target, Table csv_file){
 
@@ -115,13 +146,13 @@ std::vector<Traj> generate_path(StateList states, Table csv_file, float k0=0.0){
     int max_iter = 100;
 
     TrajectoryOptimizer traj_opti_obj(m_model, p, state);
-    Traj traj = traj_opti_obj.optimizer_traj(max_iter, cost_th_, h_step_, true, false);
+    Traj traj = traj_opti_obj.optimizer_traj(max_iter, cost_th_, h_step_, true, true);
     traj_list.push_back(traj);
   }
   return traj_list;
 };
 
-std::vector<Traj> uniform_terminal_state_sample_test1(Table csv_file){
+std::vector<Traj> uniform_terminal_state_sample_test(Table csv_file){
   float k0 = 0.0;
   int nxy = 5;  // number of position sampling
   int nh = 3;  // number of heading sampling
@@ -139,25 +170,8 @@ std::vector<Traj> uniform_terminal_state_sample_test1(Table csv_file){
   return traj_list;
 };
 
-std::vector<Traj> uniform_terminal_state_sample_test2(Table csv_file){
-  float k0 = 0.1;
-  int nxy = 6;  // number of position sampling
-  int nh = 3;  // number of heading sampling
-  int d = 20; // distance to target
-  float a_min = 10.0/180 * M_PI; // position sampling min angle
-  float a_max = +45.0/180 * M_PI; // position sampling max angle
-  float p_min = -20.0/180 * M_PI; // heading sampling min angle
-  float p_max = +20.0/180 * M_PI; // heading sampling max angle
 
-  StateList states = calc_uniform_polar_states(nxy, nh, d,
-                                               a_min, a_max,
-                                               p_min, p_max);
-
-  std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
-  return traj_list;
-};
-
-std::vector<Traj> biased_terminal_state_sample_test1(Table csv_file){
+std::vector<Traj> biased_terminal_state_sample_test(Table csv_file){
   float k0 = 0.0;
   int nxy = 30;  // number of position sampling
   int nh = 2;  // number of heading sampling
@@ -169,11 +183,26 @@ std::vector<Traj> biased_terminal_state_sample_test1(Table csv_file){
 
   int ns = 100;
   float goal_angle = 0.0;
-  // TODO not yet finished
   StateList states = calc_biased_polar_states(goal_angle, ns,
                                               nxy, nh, d,
                                               a_min, a_max,
                                               p_min, p_max);
+
+  std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
+  return traj_list;
+};
+
+std::vector<Traj> lane_state_sample_test(Table csv_file){
+  float k0 = 0.0;
+  float l_center = 10.0;
+  float l_heading = 90.0/180.0 * M_PI;
+  float l_width = 3.0;
+  float v_width = 1.0;
+  int d = 10;
+  int nxy = 5;
+
+  StateList states = calc_lane_states(l_center, l_heading, l_width,
+                                      v_width, d, nxy);
 
   std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
   return traj_list;
@@ -194,7 +223,8 @@ int main(){
       }
       lookup_table.push_back(temp);
     }
-    std::vector<Traj> traj_list1 = uniform_terminal_state_sample_test1(lookup_table);
-    std::vector<Traj> traj_list2 = uniform_terminal_state_sample_test2(lookup_table);
+    std::vector<Traj> traj_list1 = uniform_terminal_state_sample_test(lookup_table);
+    std::vector<Traj> traj_list2 = biased_terminal_state_sample_test(lookup_table);
+    std::vector<Traj> traj_list3 = lane_state_sample_test(lookup_table);
 
 };
