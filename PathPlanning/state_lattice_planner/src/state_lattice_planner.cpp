@@ -53,6 +53,31 @@ StateList calc_uniform_polar_states(int nxy, int nh, int d,
   return states;
 };
 
+StateList calc_biased_polar_states(float goal_angle, int ns, int nxy,
+                                   int nh, int d,
+                                   float a_min, float a_max,
+                                   float p_min, float p_max){
+  std::vector<float> asi;
+  std::vector<float> cnav;
+  float cnav_max = std::numeric_limits<float>::min();
+  float cnav_sum = 0;
+  for(int i=0; i<ns-1; i++){
+    float asi_sample = a_min + (a_max - a_min)*i/(ns-1);
+    asi.push_back(asi_sample);
+    float cnav_sample = M_PI - std::abs(asi_sample - goal_angle);
+    cnav.push_back(cnav_sample);
+    cnav_sum += cnav_sample;
+    if (cnav_max < cnav_sample){
+      cnav_max = cnav_sample;
+    }
+  }
+
+
+  //StateList states = sample_states(angle_samples, a_min, a_max, d, p_max, p_min, nh);
+  StateList states;
+  // TODO not yet finish
+  return states;
+};
 
 Parameter search_nearest_one_from_lookuptable(TrajState target, Table csv_file){
 
@@ -76,10 +101,11 @@ Parameter search_nearest_one_from_lookuptable(TrajState target, Table csv_file){
     return best_p;
 }
 
-std::vector<Traj> generate_path(StateList states, Table csv_file){
+std::vector<Traj> generate_path(StateList states, Table csv_file, float k0=0.0){
   std::vector<Traj> traj_list;
   for(TrajState state:states){
     Parameter   p = search_nearest_one_from_lookuptable(state, csv_file);
+    p.steering_sequence[0] = k0;
 
     // default settings for this scenario
     State init_state(0, 0, 0, CONST_V);
@@ -89,26 +115,67 @@ std::vector<Traj> generate_path(StateList states, Table csv_file){
     int max_iter = 100;
 
     TrajectoryOptimizer traj_opti_obj(m_model, p, state);
-    Traj traj = traj_opti_obj.optimizer_traj(max_iter, cost_th_, h_step_, true, true);
+    Traj traj = traj_opti_obj.optimizer_traj(max_iter, cost_th_, h_step_, true, false);
     traj_list.push_back(traj);
   }
   return traj_list;
 };
 
 std::vector<Traj> uniform_terminal_state_sample_test1(Table csv_file){
+  float k0 = 0.0;
   int nxy = 5;  // number of position sampling
   int nh = 3;  // number of heading sampling
   int d = 20; // distance to target
-  float a_min = - 45.0/180 * M_PI; // position sampling min angle
-  float a_max = + 45.0/180 * M_PI; // position sampling max angle
-  float p_min = - 45.0/180 * M_PI; // heading sampling min angle
-  float p_max = + 45.0/180 * M_PI; // heading sampling max angle
+  float a_min = -45.0/180 * M_PI; // position sampling min angle
+  float a_max = +45.0/180 * M_PI; // position sampling max angle
+  float p_min = -45.0/180 * M_PI; // heading sampling min angle
+  float p_max = +45.0/180 * M_PI; // heading sampling max angle
 
   StateList states = calc_uniform_polar_states(nxy, nh, d,
                                                a_min, a_max,
                                                p_min, p_max);
 
-  std::vector<Traj> traj_list = generate_path(states, csv_file);
+  std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
+  return traj_list;
+};
+
+std::vector<Traj> uniform_terminal_state_sample_test2(Table csv_file){
+  float k0 = 0.1;
+  int nxy = 6;  // number of position sampling
+  int nh = 3;  // number of heading sampling
+  int d = 20; // distance to target
+  float a_min = 10.0/180 * M_PI; // position sampling min angle
+  float a_max = +45.0/180 * M_PI; // position sampling max angle
+  float p_min = -20.0/180 * M_PI; // heading sampling min angle
+  float p_max = +20.0/180 * M_PI; // heading sampling max angle
+
+  StateList states = calc_uniform_polar_states(nxy, nh, d,
+                                               a_min, a_max,
+                                               p_min, p_max);
+
+  std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
+  return traj_list;
+};
+
+std::vector<Traj> biased_terminal_state_sample_test1(Table csv_file){
+  float k0 = 0.0;
+  int nxy = 30;  // number of position sampling
+  int nh = 2;  // number of heading sampling
+  int d = 20; // distance to target
+  float a_min = -45.0/180 * M_PI; // position sampling min angle
+  float a_max = +45.0/180 * M_PI; // position sampling max angle
+  float p_min = -20.0/180 * M_PI; // heading sampling min angle
+  float p_max = +20.0/180 * M_PI; // heading sampling max angle
+
+  int ns = 100;
+  float goal_angle = 0.0;
+  // TODO not yet finished
+  StateList states = calc_biased_polar_states(goal_angle, ns,
+                                              nxy, nh, d,
+                                              a_min, a_max,
+                                              p_min, p_max);
+
+  std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
   return traj_list;
 };
 
@@ -127,6 +194,7 @@ int main(){
       }
       lookup_table.push_back(temp);
     }
-    std::vector<Traj> traj_list = uniform_terminal_state_sample_test1(lookup_table);
+    std::vector<Traj> traj_list1 = uniform_terminal_state_sample_test1(lookup_table);
+    std::vector<Traj> traj_list2 = uniform_terminal_state_sample_test2(lookup_table);
 
 };
