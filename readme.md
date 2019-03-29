@@ -29,6 +29,7 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
     * [Dynamic Window Approach](#dynamic-window-approach)
     * [Model Predictive Trajectory Generator](#model-predictive-trajectory-generator)
     * [State Lattice Planner](#state-lattice-planner)
+    * [Cubic Spline Planner](#cubic-spline-planner)
 
 # Localization
 ## Extended Kalman Filter Localization
@@ -66,3 +67,4 @@ This part is based on the bicycle motion model.
 * red circle: the initial point
 
 ![mptg_gif](./PathPlanning/state_lattice_planner/slp.gif)
+[State Space Sampling of Feasible Motions for High-Performance Mobile Robot Navigation in Complex Environments](https://www.ri.cmu.edu/pub_files/pub4/howard_thomas_2008_1/howard_thomas_2008_1.pdf)

@@ -19,7 +19,6 @@
 #include "motion_model.h"
 
 
-
 cv::Point2i cv_offset(
     float x, float y, int image_width=2000, int image_height=2000){
   cv::Point2i output;
