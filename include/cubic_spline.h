@@ -142,9 +142,23 @@ class Spline2D{
     Poi_f calc_postion(float s_t){
       float x = sx.calc(s_t);
       float y = sy.calc(s_t);
-
       return {{x, y}};
     };
+
+    float calc_curvature(float s_t){
+      float dx = sx.calc_d(s_t);
+      float ddx = sx.calc_dd(s_t);
+      float dy = sy.calc_d(s_t);
+      float ddy = sy.calc_dd(s_t);
+      return (ddy * dx - ddx * dy)/(dx * dx + dy * dy);
+    };
+
+    float calc_yaw(float s_t){
+      float dx = sx.calc_d(s_t);
+      float dy = sy.calc_d(s_t);
+      return std::atan2(dy, dx);
+    };
+
 
   private:
     Vec_f calc_s(Vec_f x, Vec_f y){
