@@ -61,6 +61,10 @@ This part is based on the bicycle motion model.
 
 ![mptg_gif](./gif/mptg.gif)
 
+## Cubic Spline Planner
+
+![mptg_gif](./gif/csp.png)
+
 ## State Lattice Planner
 * blue circle: the target point
 * red circle: the initial point
