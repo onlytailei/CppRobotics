@@ -10,10 +10,12 @@
 
 #include <iostream>
 #include <vector>
+#include <array>
 #include <string>
 #include <Eigen/Eigen>
+#include <stdexcept>
 
-
+using Poi_f=std::array<float, 2>;
 using Vec_f=std::vector<float>;
 
 Vec_f vec_diff(Vec_f input){
@@ -36,24 +38,59 @@ Vec_f cum_sum(Vec_f input){
 
 class Spline{
   public:
-    const Vec_f x;
-    const Vec_f y;
-    const int nx;
-    const Vec_f h;
-    const Vec_f a;
+    Vec_f x;
+    Vec_f y;
+    int nx;
+    Vec_f h;
+    Vec_f a;
     Vec_f b;
-    Eigen::VectorXf c;
+    Vec_f c;
+    //Eigen::VectorXf c;
     Vec_f d;
 
+    Spline(){};
     // d_i * (x-x_i)^3 + c_i * (x-x_i)^2 + b_i * (x-x_i) + a_i
-
     Spline(Vec_f x_, Vec_f y_):x(x_), y(y_), nx(x_.size()), h(vec_diff(x_)), a(y_){
       Eigen::MatrixXf A = calc_A();
       Eigen::VectorXf B = calc_B();
-      c = A.colPivHouseholderQr().solve(B);
+      Eigen::VectorXf c_eigen = A.colPivHouseholderQr().solve(B);
+      float * c_pointer = c_eigen.data();
+      //Eigen::Map<Eigen::VectorXf>(c, c_eigen.rows(), 1) = c_eigen;
+      c.assign(c_pointer, c_pointer+c_eigen.rows());
 
-
+      for(int i=0; i<nx-1; i++){
+        d.push_back((c[i+1]-c[i])/(3.0*h[i]));
+        b.push_back((a[i+1] - a[i])/h[i] - h[i] * (c[i+1] + 2*c[i])/3.0);
+      }
     };
+
+    float calc(float t){
+      if(t<x.front() || t>x.back()){
+        throw std::invalid_argument( "received value out of the pre-defined range" );
+      }
+      int seg_id = bisect(t, 0, nx);
+      float dx = t - x[seg_id];
+      return a[seg_id] + b[seg_id] * dx + c[seg_id] * dx * dx + d[seg_id] * dx * dx * dx;
+    };
+
+    float calc_d(float t){
+      if(t<x.front() || t>x.back()){
+        throw std::invalid_argument( "received value out of the pre-defined range" );
+      }
+      int seg_id = bisect(t, 0, nx-1);
+      float dx = t - x[seg_id];
+      return b[seg_id]  + 2 * c[seg_id] * dx + 3 * d[seg_id] * dx * dx;
+    }
+
+    float calc_dd(float t){
+      if(t<x.front() || t>x.back()){
+        throw std::invalid_argument( "received value out of the pre-defined range" );
+      }
+      int seg_id = bisect(t, 0, nx);
+      float dx = t - x[seg_id];
+      return 2 * c[seg_id] + 6 * d[seg_id] * dx;
+    }
+
   private:
     Eigen::MatrixXf calc_A(){
       Eigen::MatrixXf A = Eigen::MatrixXf::Zero(nx, nx);
@@ -77,19 +114,38 @@ class Spline{
       }
       return B;
     };
+
+    int bisect(float t, int start, int end){
+      int mid = (start+end)/2;
+      if (t==x[mid] || end-start<=1){
+        return mid;
+      }else if (t>x[mid]){
+        return bisect(t, mid, end);
+      }else{
+        return bisect(t, start, mid);
+      }
+    }
 };
 
 class Spline2D{
   public:
-    Vec_f sx;
-    Vec_f sy;
+    Spline sx;
+    Spline sy;
     Vec_f s;
 
     Spline2D(Vec_f x, Vec_f y){
       s = calc_s(x, y);
-      Spline sx = Spline(s, x);
-      Spline sy = Spline(s, y);
+      sx = Spline(s, x);
+      sy = Spline(s, y);
     };
+
+    Poi_f calc_postion(float s_t){
+      float x = sx.calc(s_t);
+      float y = sy.calc(s_t);
+
+      return {{x, y}};
+    };
+
   private:
     Vec_f calc_s(Vec_f x, Vec_f y){
       Vec_f ds;
@@ -97,7 +153,7 @@ class Spline2D{
       Vec_f dx = vec_diff(x);
       Vec_f dy = vec_diff(y);
 
-      for(unsigned int i=0; i<x.size(); i++){
+      for(unsigned int i=0; i<dx.size(); i++){
         ds.push_back(std::sqrt(dx[i]*dx[i] + dy[i]*dy[i]));
       }
 
