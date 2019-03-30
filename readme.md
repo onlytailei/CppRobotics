@@ -6,7 +6,7 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 - cmake
 - opencv 3.3
 - Eigen 3
-- ~~ROS~~ (I don't want to make the project tooooooo huge :))
+- ~~ROS~~
 
 ## Build
      $ mkdir build
