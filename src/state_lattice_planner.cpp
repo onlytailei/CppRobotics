@@ -212,7 +212,7 @@ int main(){
   //uniform_terminal_state_sample_test1();
     std::vector<std::vector<float>> lookup_table;
 
-    std::ifstream file("../lookuptable.csv");
+    std::ifstream file("../../lookuptable.csv");
     CSVIterator loop(file);
     loop++;
     for(; loop != CSVIterator(); ++loop)

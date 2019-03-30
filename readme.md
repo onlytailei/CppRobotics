@@ -38,7 +38,7 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 * red points: observations (e.g. GPS)
 * blue line: estimated positions
 
-![ekf_gif](./Localization/extended_kalman_filter/ekf.gif)
+![ekf_gif](./gif/ekf.gif)
 
 ## Particle Filter Localization
 * green line: the groundtruth trajectory
@@ -46,25 +46,25 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 * red points: landmarks
 * blue line: estimated positions
 
-![pf_gif](./Localization/particle_filter/pf.gif)
+![pf_gif](./gif/pf.gif)
 
 # Path Planning
 ## Dynamic Window Approach
 * blue circle: the target point
 * red circle: the robot
 
-![dwa_gif](./PathPlanning/dynamic_window_approach/dwa.gif)
+![dwa_gif](./gif/dwa.gif)
 
 ## Model Predictive Trajectory Generator
 This part is based on the bicycle motion model.
 * blue circle: the target point
 * red circle: the initial point
 
-![mptg_gif](./PathPlanning/model_predictive_trajectory_generator/mptg.gif)
+![mptg_gif](./gif/mptg.gif)
 
 ## State Lattice Planner
 * blue circle: the target point
 * red circle: the initial point
 
-![mptg_gif](./PathPlanning/state_lattice_planner/slp.gif)
+![mptg_gif](./gif/slp.gif)
 [State Space Sampling of Feasible Motions for High-Performance Mobile Robot Navigation in Complex Environments](https://www.ri.cmu.edu/pub_files/pub4/howard_thomas_2008_1/howard_thomas_2008_1.pdf)
