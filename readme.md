@@ -27,8 +27,8 @@ Find all the executable files in ***build/bin***.
 * [Path Planning](#path-planning)
     * [Dynamic Window Approach](#dynamic-window-approach)
     * [Model Predictive Trajectory Generator](#model-predictive-trajectory-generator)
-    * [State Lattice Planner](#state-lattice-planner)
     * [Cubic Spline Planner](#cubic-spline-planner)
+    * [State Lattice Planner](#state-lattice-planner)
 
 # Localization
 ## Extended Kalman Filter Localization
