@@ -37,7 +37,8 @@ Find all the executable files in ***build/bin***.
 * red points: observations (e.g. GPS)
 * blue line: estimated positions
 
-![ekf_gif](./gif/ekf.gif)
+<!-- ![ekf_gif](./gif/ekf.gif) -->
+<img src="./gif/ekf.gif" alt="ekf" width="400"/>
 
 ## Particle Filter Localization
 * green line: the groundtruth trajectory
@@ -45,30 +46,35 @@ Find all the executable files in ***build/bin***.
 * red points: landmarks
 * blue line: estimated positions
 
-![pf_gif](./gif/pf.gif)
+<!-- ![pf_gif](./gif/pf.gif) -->
+<img src="./gif/pf.gif" alt="pf" width="400"/>
 
 # Path Planning
 ## Dynamic Window Approach
 * blue circle: the target point
 * red circle: the robot
 
-![dwa_gif](./gif/dwa.gif)
+<!-- ![dwa_gif](./gif/dwa.gif) -->
+<img src="./gif/dwa.gif" alt="dwa" width="400"/>
 
 ## Model Predictive Trajectory Generator
 This part is based on the bicycle motion model.
 * blue circle: the target point
 * red circle: the initial point
 
-![mptg_gif](./gif/mptg.gif)
+<!-- ![mptg_gif](./gif/mptg.gif) -->
+<img src="./gif/mptg.gif" alt="mptg" width="400"/>
 
 ## Cubic Spline Planner
 
-![mptg_gif](./gif/csp.png)
+<!-- ![mptg_gif](./gif/csp.png =500x) -->
+<img src="./gif/csp.png" alt="csp" width="400"/>
 
 ## State Lattice Planner
 * blue circle: the target point
 * red circle: the initial point
 
-![mptg_gif](./gif/slp.gif)
+<!-- ![mptg_gif](./gif/slp.gif) -->
+<img src="./gif/slp.gif" alt="slp" width="400"/>
 
 [State Space Sampling of Feasible Motions for High-Performance Mobile Robot Navigation in Complex Environments](https://www.ri.cmu.edu/pub_files/pub4/howard_thomas_2008_1/howard_thomas_2008_1.pdf)
