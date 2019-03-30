@@ -8,13 +8,12 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 - Eigen 3
 
 ## Build
-     $ export CPP_ROBOTICS=/path/to/root_of_this_repo
-     $ cd /path/to/specific/method
      $ mkdir build
      $ cd build
      $ cmake ../
      $ make -j 8
 
+Find all the executable files in ***build/bin***.
 
 # Table of Contents
 * [Localization](#localization)
@@ -67,4 +66,5 @@ This part is based on the bicycle motion model.
 * red circle: the initial point
 
 ![mptg_gif](./gif/slp.gif)
+
 [State Space Sampling of Feasible Motions for High-Performance Mobile Robot Navigation in Complex Environments](https://www.ri.cmu.edu/pub_files/pub4/howard_thomas_2008_1/howard_thomas_2008_1.pdf)
