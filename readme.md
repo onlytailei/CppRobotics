@@ -41,6 +41,8 @@ Find all the executable files in ***build/bin***.
 <!-- ![ekf_gif](./gif/ekf.gif) -->
 <img src="./gif/ekf.gif" alt="ekf" width="400"/>
 
+[Probabilistic Robotics](http://www.probabilistic-robotics.org/)
+
 ## Particle Filter Localization
 * green line: the groundtruth trajectory
 * black line: dead reckoning
@@ -50,6 +52,8 @@ Find all the executable files in ***build/bin***.
 <!-- ![pf_gif](./gif/pf.gif) -->
 <img src="./gif/pf.gif" alt="pf" width="400"/>
 
+[Probabilistic Robotics](http://www.probabilistic-robotics.org/)
+
 # Path Planning
 ## Dynamic Window Approach
 * blue circle: the target point
@@ -57,6 +61,8 @@ Find all the executable files in ***build/bin***.
 
 <!-- ![dwa_gif](./gif/dwa.gif) -->
 <img src="./gif/dwa.gif" alt="dwa" width="400"/>
+
+[The dynamic window approach to collision avoidance](https://ieeexplore.ieee.org/document/580977)
 
 ## Model Predictive Trajectory Generator
 This part is based on the bicycle motion model.
