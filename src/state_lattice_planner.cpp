@@ -11,10 +11,10 @@
 #include <vector>
 #include <array>
 #include <cmath>
+#include <Eigen/Eigen>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <Eigen/Eigen>
 #include "csv_reader.h"
 #include "motion_model.h"
 #include "trajectory_optimizer.h"
@@ -169,7 +169,6 @@ std::vector<Traj> uniform_terminal_state_sample_test(Table csv_file){
   std::vector<Traj> traj_list = generate_path(states, csv_file, k0);
   return traj_list;
 };
-
 
 std::vector<Traj> biased_terminal_state_sample_test(Table csv_file){
   float k0 = 0.0;
