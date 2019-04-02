@@ -54,7 +54,7 @@ using Traj = std::vector<TrajState>;
 using StateList = std::vector<TrajState>;
 using ParameterList = std::vector<Parameter>;
 
-std::vector<float> quadrati_interpolation(
+std::vector<float> quadratic_interpolation(
     std::array<float, 3> x, std::array<float, 3> y){
     Eigen::Matrix3f A;
     Eigen::Vector3f Y;
@@ -112,7 +112,7 @@ Traj MotionModel::generate_trajectory(Parameter p){
   // boost::math::cubic_b_spline<float> spline(
   //   p.steering_sequence.data(), p.steering_sequence.size(),
   //   0, horizon/p.steering_sequence.size());
-  std::vector<float> spline = quadrati_interpolation(
+  std::vector<float> spline = quadratic_interpolation(
     {{0, horizon/2, horizon}},
     p.steering_sequence);
 
@@ -135,7 +135,7 @@ TrajState MotionModel::generate_last_state(Parameter p){
   // boost::math::cubic_b_spline<float> spline(
   //   p.steering_sequence.data(), p.steering_sequence.size(),
   //   0, horizon/p.steering_sequence.size());
-  std::vector<float> spline = quadrati_interpolation(
+  std::vector<float> spline = quadratic_interpolation(
     {{0, horizon/2, horizon}},
     p.steering_sequence);
 
