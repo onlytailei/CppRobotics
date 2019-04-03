@@ -9,10 +9,10 @@
 #include <vector>
 #include <array>
 #include <cmath>
+#include <Eigen/Eigen>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <Eigen/Eigen>
 #include "motion_model.h"
 #include "trajectory_optimizer.h"
 
