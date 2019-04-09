@@ -35,3 +35,6 @@ target_link_libraries(slp ${OpenCV_LIBS})
 
 add_executable(csp src/cubic_spline_planner.cpp)
 target_link_libraries(csp ${OpenCV_LIBS})
+
+add_executable(frenet src/frenet_optimal_trajectory.cpp)
+target_link_libraries(frenet ${OpenCV_LIBS})
