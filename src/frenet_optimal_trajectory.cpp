@@ -11,6 +11,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <sys/time.h>
 #include "cubic_spline.h"
 #include "frenet_path.h"
 #include "quintic_polynomial.h"
@@ -28,7 +29,7 @@
 #define TARGET_SPEED  30.0 / 3.6  // target speed [m/s]
 #define D_T_S  5.0 / 3.6  // target speed sampling length [m/s]
 #define N_S_SAMPLE  1  // sampling number of target speed
-#define ROBOT_RADIUS  2.0  // robot radius [m]
+#define ROBOT_RADIUS  1.5  // robot radius [m]
 
 #define KJ  0.1
 #define KT  0.1
@@ -47,12 +48,11 @@ float sum_of_power(std::vector<float> value_list){
 	return sum;	
 };
 
-
 Vec_Path calc_frenet_paths(
 	float c_speed, float c_d, float c_d_d, float c_d_dd, float s0){
 		std::vector<FrenetPath> fp_list;
 		for(float di=-1*MAX_ROAD_WIDTH; di<MAX_ROAD_WIDTH; di+=D_ROAD_W){
-			for(float Ti=-1*MINT; Ti<MINT; Ti+=DT){
+			for(float Ti=MINT; Ti<MAXT; Ti+=DT){
 				FrenetPath fp;
 				QuinticPolynomial lat_qp(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti);
 				for(float t=0; t<Ti; t+=DT){
@@ -86,7 +86,6 @@ Vec_Path calc_frenet_paths(
 
 					float Jp = sum_of_power(fp.d_ddd);
 					float Js = sum_of_power(fp_bot.s_ddd);
-
 					float ds = (TARGET_SPEED - fp_bot.s_d.back());
 
 					fp_bot.cd = KJ * Jp + KT * Ti + KD * std::pow(fp_bot.d.back(), 2);
@@ -103,6 +102,9 @@ Vec_Path calc_frenet_paths(
 void calc_global_paths(Vec_Path & path_list, Spline2D csp){
  	for (Vec_Path::iterator path_p=path_list.begin(); path_p!=path_list.end();path_p++){
 		for(unsigned int i=0; i<path_p->s.size(); i++){
+			if (path_p->s[i] >= csp.s.back()){
+				break;
+			}
 			std::array<float, 2> poi = csp.calc_postion(path_p->s[i]);
 			float iyaw = csp.calc_yaw(path_p->s[i]);
 			float di = path_p->d[i];
@@ -160,11 +162,11 @@ FrenetPath frenet_optimal_planning(
 	float c_d, float c_d_d, float c_d_dd, Vec_Poi ob){
 		Vec_Path fp_list = calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0);
 		calc_global_paths(fp_list, csp);
-		check_paths(fp_list, ob);
+		Vec_Path save_paths = check_paths(fp_list, ob);
 
-		float min_cost = std::numeric_limits<float>::min();
+		float min_cost = std::numeric_limits<float>::max();
 		FrenetPath final_path;
-		for(auto path:fp_list){
+		for(auto path:save_paths){
 			if (min_cost >= path.cf){
 				min_cost = path.cf;
 				final_path = path;
@@ -176,7 +178,7 @@ FrenetPath frenet_optimal_planning(
 cv::Point2i cv_offset(
     float x, float y, int image_width=2000, int image_height=2000){
   cv::Point2i output;
-  output.x = int(x * 100) + image_width/2;
+  output.x = int(x * 100) + 300;
   output.y = image_height - int(y * 100) - image_height/3;
   return output;
 };
@@ -216,36 +218,70 @@ int main(){
 
 	float area = 20.0;
 
-  cv::namedWindow("dwa", cv::WINDOW_NORMAL);
+  cv::namedWindow("frenet", cv::WINDOW_NORMAL);
   int count = 0;
 
 	for(int i=0; i<SIM_LOOP; i++){
 		FrenetPath final_path = frenet_optimal_planning(
 			csp_obj, s0, c_speed, c_d, c_d_d, c_d_dd, obstcles);
+		s0 = final_path.s[1];
+		c_d = final_path.d[1];
+		c_d_d = final_path.d_d[1];
+		c_d_dd = final_path.d_dd[1];
+		c_speed = final_path.s_d[1];
 
-			s0 = final_path.s[1];
-			c_d = final_path.d[1];
-			c_d_d = final_path.d_d[1];
-			c_d_dd = final_path.d_dd[1];
-			c_speed = final_path.s_d[1];
+		if (std::pow((final_path.x[1] - r_x.back()), 2) + std::pow((final_path.y[1]-r_y.back()), 2) <= 1.0){
+				break;
+		}
+
+		// visualization
+		cv::Mat bg(2000, 8000, CV_8UC3, cv::Scalar(255, 255, 255));
+		for(unsigned int i=1; i<r_x.size(); i++){
+			cv::line(
+				bg,
+				cv_offset(r_x[i-1], r_y[i-1], bg.cols, bg.rows),
+				cv_offset(r_x[i], r_y[i], bg.cols, bg.rows),
+				cv::Scalar(0, 0, 0),
+				10);
+		}
+		for(unsigned int i=0; i<final_path.x.size(); i++){
+			cv::circle(
+				bg,
+				cv_offset(final_path.x[i], final_path.y[i], bg.cols, bg.rows),
+				40, cv::Scalar(255, 0, 0), -1);
+		}
+
+		cv::circle(
+			bg,
+			cv_offset(final_path.x.front(), final_path.y.front(), bg.cols, bg.rows),
+			50, cv::Scalar(0, 255, 0), -1);
+
+		for(unsigned int i=0; i<obstcles.size(); i++){
+			cv::circle(
+				bg,
+				cv_offset(obstcles[i][0], obstcles[i][1], bg.cols, bg.rows),
+				40, cv::Scalar(0, 0, 255), 5);
+		}
+
+		cv::putText(
+			bg,
+			"Speed: " + std::to_string(c_speed*3.6).substr(0, 4) + "km/h",
+			cv::Point2i((int)bg.cols*0.5, (int)bg.rows*0.1),
+			cv::FONT_HERSHEY_SIMPLEX,
+			5, 
+			cv::Scalar(0, 0, 0),
+			10);
 
 
-			// visualization
-			cv::Mat bg(2000, 2000, CV_8UC3, cv::Scalar(255, 255, 255));
-			for(unsigned int i=1; i<r_x.size(); i++){
-				cv::line(
-					bg,
-					cv_offset(r_x[i-1], r_y[i-1], bg.cols, bg.rows),
-					cv_offset(r_x[i], r_y[i], bg.cols, bg.rows),
-					cv::Scalar(0, 0, 0),
-					10);
-    
-			cv::imshow("frenet", bg);
-			cv::waitKey(5);
-    }
+		cv::imshow("frenet", bg);
+		cv::waitKey(5);
 
-
-	};
-
+		// save image in build/bin/pngs
+		// struct timeval tp;
+		// gettimeofday(&tp, NULL);
+		// long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+		// std::string int_count = std::to_string(ms);
+		// cv::imwrite("./pngs/"+int_count+".png", bg);
+	}
 	return 0; 
-}
+};

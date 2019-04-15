@@ -44,7 +44,7 @@ class QuinticPolynomial{
 					vxe - a1 - 2 * a2 * T,
 					axe - 2 * a2;
 			
-			Eigen::VectorXf c_eigen = A.colPivHouseholderQr().solve(B);
+			Eigen::Vector3f c_eigen = A.colPivHouseholderQr().solve(B);
 			a3 = c_eigen[0]; 
 			a4 = c_eigen[1];
 			a5 = c_eigen[2];

@@ -30,6 +30,7 @@ Find all the executable files in ***build/bin***.
     * [Model Predictive Trajectory Generator](#model-predictive-trajectory-generator)
     * [Cubic Spline Planner](#cubic-spline-planner)
     * [State Lattice Planner](#state-lattice-planner)
+    * [Frenet Frame Trajectory](#frenet-frame-trajectory)
 
 # Localization
 ## Extended Kalman Filter Localization
@@ -39,7 +40,7 @@ Find all the executable files in ***build/bin***.
 * blue line: estimated positions
 
 <!-- ![ekf_gif](./gif/ekf.gif) -->
-<img src="./gif/ekf.gif" alt="ekf" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/ekf.gif" alt="ekf" width="400"/>
 
 [Probabilistic Robotics](http://www.probabilistic-robotics.org/)
 
@@ -50,7 +51,7 @@ Find all the executable files in ***build/bin***.
 * blue line: estimated positions
 
 <!-- ![pf_gif](./gif/pf.gif) -->
-<img src="./gif/pf.gif" alt="pf" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/pf.gif" alt="pf" width="400"/>
 
 [Probabilistic Robotics](http://www.probabilistic-robotics.org/)
 
@@ -60,7 +61,7 @@ Find all the executable files in ***build/bin***.
 * red circle: the robot
 
 <!-- ![dwa_gif](./gif/dwa.gif) -->
-<img src="./gif/dwa.gif" alt="dwa" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/dwa.gif" alt="dwa" width="400"/>
 
 [The dynamic window approach to collision avoidance](https://ieeexplore.ieee.org/document/580977)
 
@@ -70,18 +71,29 @@ This part is based on the bicycle motion model.
 * red circle: the initial point
 
 <!-- ![mptg_gif](./gif/mptg.gif) -->
-<img src="./gif/mptg.gif" alt="mptg" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/mptg.gif" alt="mptg" width="400"/>
 
 ## Cubic Spline Planner
 
 <!-- ![mptg_gif](./gif/csp.png =500x) -->
-<img src="./gif/csp.png" alt="csp" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/csp.png" alt="csp" width="400"/>
 
 ## State Lattice Planner
 * blue circle: the target point
 * red circle: the initial point
 
 <!-- ![mptg_gif](./gif/slp.gif) -->
-<img src="./gif/slp.gif" alt="slp" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/slp.gif" alt="slp" width="400"/>
 
 [State Space Sampling of Feasible Motions for High-Performance Mobile Robot Navigation in Complex Environments](https://www.ri.cmu.edu/pub_files/pub4/howard_thomas_2008_1/howard_thomas_2008_1.pdf)
+
+## Frenet Frame Trajectory
+
+* black line: the planned spline path
+* red circle: the obstacle
+* blue circle: the planned trajectory
+* green circle: the real-time position of robot
+
+<img src="https://ram-lab.com/file/tailei/gif/frenet.gif" alt="frenet" width="400"/>
+
+[Optimal Trajectory Generation for Dynamic Street Scenarios in a Frenet Frame](https://www.researchgate.net/publication/224156269_Optimal_Trajectory_Generation_for_Dynamic_Street_Scenarios_in_a_Frenet_Frame)
