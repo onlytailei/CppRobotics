@@ -36,6 +36,10 @@ class FrenetPath{
 		Vec_f yaw;
 		Vec_f ds;
 		Vec_f c;
+
+		float max_speed;
+		float max_accel;
+		float max_curvature;
 };
 
 #endif

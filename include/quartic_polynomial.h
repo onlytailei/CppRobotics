@@ -31,7 +31,7 @@ class QuarticPolynomial{
 
 		QuarticPolynomial(){};
 		
-		QuarticPolynomial(float xs_, float vxs_, float axs_, float xe_, float vxe_, float axe_, float T): xs(xs_), vxs(vxs_), axs(axs_), vxe(vxe_), axe(axe_), a0(xs_), a1(vxs_), a2(axs_/2.0){
+		QuarticPolynomial(float xs_, float vxs_, float axs_, float vxe_, float axe_, float T): xs(xs_), vxs(vxs_), axs(axs_), vxe(vxe_), axe(axe_), a0(xs_), a1(vxs_), a2(axs_/2.0){
 			Eigen::Matrix2f A;
 			A << 3*std::pow(T, 2),   4*std::pow(T,3),
 					 6*T,								12*std::pow(T,2);
