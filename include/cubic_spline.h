@@ -14,9 +14,9 @@
 #include <string>
 #include <Eigen/Eigen>
 #include <stdexcept>
+#include "cpprobotics_types.h"
 
-using Poi_f=std::array<float, 2>;
-using Vec_f=std::vector<float>;
+namespace cpprobotics{
 
 Vec_f vec_diff(Vec_f input){
   Vec_f output;
@@ -176,4 +176,5 @@ class Spline2D{
       return out_s;
     };
 };
+}
 #endif

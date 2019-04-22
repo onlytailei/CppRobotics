@@ -17,6 +17,8 @@
 
 #define YAW_P2P(angle) std::fmod((angle+M_PI), 2*M_PI)-M_PI
 
+namespace cpprobotics{
+
 struct Parameter{
   float distance;
   std::array<float, 3> steering_sequence{{0,0,0}};
@@ -146,7 +148,7 @@ TrajState MotionModel::generate_last_state(Parameter p){
   }
   return TrajState{state_.x, state_.y, state_.yaw};
 }
-
+}
 
 
 #endif

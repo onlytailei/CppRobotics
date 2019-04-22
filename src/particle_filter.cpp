@@ -21,7 +21,6 @@
 #define NP 100
 #define NTh NP/2
 
-using namespace std;
 
 // x_{t+1} = F@x_{t}+B@u_t
 Eigen::Vector4f motion_model(Eigen::Vector4f x, Eigen::Vector2f u){

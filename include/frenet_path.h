@@ -12,8 +12,9 @@
 #include <vector>
 #include <array>
 #include <string>
+#include "cpprobotics_types.h"
 
-using Vec_f=std::vector<float>;
+namespace cpprobotics{
 
 class FrenetPath{
 	public:
@@ -42,4 +43,6 @@ class FrenetPath{
 		float max_curvature;
 };
 
+using Vec_Path=std::vector<FrenetPath>;
+}
 #endif

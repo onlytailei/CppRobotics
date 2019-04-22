@@ -20,6 +20,7 @@
 #define DS 0.1
 #define CONST_V 3.0  // use a const linear velocity here
 
+using namespace cpprobotics;
 
 int main(){
   State init_state(0, 0, 0, CONST_V);

@@ -37,7 +37,8 @@
 #define KLAT  1.0
 #define KLON  1.0
 
-using Vec_Poi=std::vector<Poi_f>;
+using namespace cpprobotics;
+
 using Vec_Path=std::vector<FrenetPath>;
 
 float sum_of_power(std::vector<float> value_list){

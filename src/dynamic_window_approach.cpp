@@ -15,7 +15,6 @@
 
 #define PI 3.141592653
 
-using namespace std;
 using Traj = std::vector<std::array<float, 5>>;
 using Obstacle = std::vector<std::array<float, 2>>;
 using State = std::array<float, 5>;

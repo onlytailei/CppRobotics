@@ -17,7 +17,6 @@
 #define DT 0.1
 #define PI 3.141592653
 
-using namespace std;
 
 // x_{t+1} = F@x_{t}+B@u_t
 Eigen::Vector4f motion_model(Eigen::Vector4f x, Eigen::Vector2f u){

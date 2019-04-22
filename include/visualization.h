@@ -16,6 +16,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+namespace cpprobotics{
 
 cv::Point2i cv_offset(
     float x, float y,
@@ -25,5 +26,5 @@ cv::Point2i cv_offset(
   output.y = image_height - int(y * 100) - image_height/3;
   return output;
 };
-
+}
 #endif

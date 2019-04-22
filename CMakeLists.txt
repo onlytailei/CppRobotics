@@ -2,13 +2,18 @@ cmake_minimum_required(VERSION 3.1)
 project(extended_kalman_filter)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+#############################
+#Dependencies
+#############################
 find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 find_package(OpenCV REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
+
 include_directories(./include)
 
 ##############################
@@ -43,3 +48,6 @@ target_link_libraries(frenet ${OpenCV_LIBS})
 ##############################
 #PathTracking
 ##############################
+
+add_executable(lqr src/lqr_steer_control.cpp)
+target_link_libraries(lqr ${OpenCV_LIBS})

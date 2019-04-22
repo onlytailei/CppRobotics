@@ -15,6 +15,8 @@
 #include <cmath>
 #include <Eigen/Eigen>
 
+namespace cpprobotics{
+
 class QuinticPolynomial{
 	public:
 		// current parameter at t=0
@@ -66,5 +68,5 @@ class QuinticPolynomial{
 			return 6*a3 + 24*a4*t + 60*a5*std::pow(t, 2);
 		};
 };
-
+}
 #endif

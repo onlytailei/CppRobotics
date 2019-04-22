@@ -17,6 +17,8 @@
 #include "cubic_spline.h"
 #include "visualization.h"
 
+using namespace cpprobotics;
+
 int main(){
     Vec_f x{-2.5, 0.0, 2.5, 5.0, 7.5, 3.0, -1.0};
     Vec_f y{0.7, -6,   5,   6.5, 0.0, 5.0, -2.0};

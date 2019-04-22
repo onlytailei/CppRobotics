@@ -15,6 +15,9 @@
 #include <cmath>
 #include <Eigen/Eigen>
 
+
+namespace cpprobotics{
+
 class QuarticPolynomial{
 	public:
 		// current parameter at t=0
@@ -62,4 +65,5 @@ class QuarticPolynomial{
 
 };
 
+}
 #endif

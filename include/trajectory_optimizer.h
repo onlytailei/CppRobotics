@@ -19,6 +19,8 @@
 #include "motion_model.h"
 
 
+namespace cpprobotics{
+
 cv::Point2i cv_offset(
     float x, float y, int image_width=2000, int image_height=2000){
   cv::Point2i output;
@@ -196,6 +198,6 @@ float TrajectoryOptimizer::selection_learning_param(Eigen::Vector3f dp){
 
     return mina;
 };
-
+}
 
 #endif
