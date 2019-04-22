@@ -33,6 +33,7 @@ Find all the executable files in ***build/bin***.
     * [Frenet Frame Trajectory](#frenet-frame-trajectory)
 * [Path Tracking](#path-tracking)
     * [LQR Sterring Control](#lqr-steering-control)
+    * [LQR Speed and Sterring Control](#lqr-speed-steering-control)
 
 
 # Localization
@@ -108,3 +109,10 @@ This part is based on the bicycle motion model.
 * red circle: the position under lqr control
 
 <img src="https://ram-lab.com/file/tailei/gif/lqr_steering.gif" alt="frenet" width="400"/>
+
+
+## LQR Speed and Steering Control
+* black line: the planned spline path
+* red circle: the position under lqr control
+
+<img src="https://ram-lab.com/file/tailei/gif/lqr_full.gif" alt="frenet" width="400"/>

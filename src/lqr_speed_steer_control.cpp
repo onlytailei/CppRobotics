@@ -23,6 +23,11 @@
 #define MAX_STEER 45.0/180*M_PI
 
 using namespace cpprobotics;
+using Matrix5f = Eigen::Matrix<float, 5, 5>;
+using Matrix52f = Eigen::Matrix<float, 5, 2>;
+using Matrix25f = Eigen::Matrix<float, 2, 5>;
+using RowVector5f = Eigen::Matrix<float, 1, 5>;
+using Vector5f = Eigen::Matrix<float, 5, 1>;
 
 cv::Point2i cv_offset(
     float x, float y, int image_width=2000, int image_height=2000){
@@ -47,7 +52,13 @@ Vec_f calc_speed_profile(Vec_f rx, Vec_f ry, Vec_f ryaw, float target_speed){
 		if (switch_point) speed_profile[i] = 0.0;
 	}
 
-	speed_profile[speed_profile.size()-1] = 0.0;
+	for(int k=0; k< 40; k++){
+			*(speed_profile.end()-k) = target_speed / (50 - k);
+			if (*(speed_profile.end()-k) <= 1.0 / 3.6){
+				*(speed_profile.end()-k) = 1.0 / 3.6;
+			}
+	}
+	
 	return speed_profile;
 };
 
@@ -72,14 +83,14 @@ float calc_nearest_index(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, int &ind){
 	return mind;
 };
 
-Eigen::Matrix4f solve_DARE(Eigen::Matrix4f A, Eigen::Vector4f B, Eigen::Matrix4f Q, float R){
-	Eigen::Matrix4f X = Q;
+Matrix5f solve_DARE(Matrix5f A, Matrix52f B, Matrix5f Q, Eigen::Matrix2f R){
+	Matrix5f X = Q;
 	int maxiter = 150;
 	float eps = 0.01;
 
 	for(int i=0; i<maxiter; i++){
-		Eigen::Matrix4f Xn = A.transpose()*X*A-A.transpose()*X*B/(R+B.transpose()*X*B) * B.transpose()*X*A+Q;
-		Eigen::Matrix4f error = Xn - X;
+		Matrix5f Xn = A.transpose()*X*A-A.transpose()*X*B*(R+B.transpose()*X*B).inverse() * B.transpose()*X*A+Q;
+		Matrix5f error = Xn - X;
 		if (error.cwiseAbs().maxCoeff()<eps){
 			return Xn;
 		}
@@ -89,47 +100,55 @@ Eigen::Matrix4f solve_DARE(Eigen::Matrix4f A, Eigen::Vector4f B, Eigen::Matrix4f
 	return X;
 };
 
-Eigen::RowVector4f dlqr(Eigen::Matrix4f A, Eigen::Vector4f B, Eigen::Matrix4f Q, float R){
-	Eigen::Matrix4f X = solve_DARE(A, B ,Q, R);
-	Eigen::RowVector4f K = 1.0/(B.transpose()*X*B + R) * (B.transpose()*X*A);
+Matrix25f dlqr(Matrix5f A, Matrix52f B, Matrix5f Q, Eigen::Matrix2f R){
+	Matrix5f X = solve_DARE(A, B ,Q, R);
+	Matrix25f K = (B.transpose()*X*B + R).inverse() * (B.transpose()*X*A);
 	return K;	
 };
 
-float lqr_steering_control(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, int& ind, float& pe, float& pth_e){
+Vec_f lqr_steering_control(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f sp, float& pe, float& pth_e){
+	int ind = 0;
 	float e = calc_nearest_index(state, cx, cy, cyaw, ind);
 
 	float k = ck[ind];
 	float th_e = YAW_P2P(state.yaw - cyaw[ind]);
+	float tv = sp[ind];
 
-	Eigen::Matrix4f A = Eigen::Matrix4f::Zero();
+	Matrix5f A = Matrix5f::Zero();
 	A(0, 0) = 1.0;
 	A(0 ,1) = DT;
 	A(1 ,2) = state.v;
 	A(2 ,2) = 1.0;
 	A(2 ,3) = DT;
+	A(4 ,4) = 1.0;
 
-	Eigen::Vector4f B = Eigen::Vector4f::Zero();
-	B(3) = state.v/L;
+	Matrix52f B = Matrix52f::Zero();
+	B(3, 0) = state.v/L;
+	B(4, 1) = DT;
 
-	Eigen::Matrix4f Q = Eigen::Matrix4f::Identity();
-	float R = 1;
+	Matrix5f Q = Matrix5f::Identity();
+	Eigen::Matrix2f R = Eigen::Matrix2f::Identity();
 
 	// gain of lqr
-	Eigen::RowVector4f K = dlqr(A, B, Q, R);
+	Matrix25f K = dlqr(A, B, Q, R);
 	
-	Eigen::Vector4f x = Eigen::Vector4f::Zero();
+	Vector5f x = Vector5f::Zero();
 	x(0) = e;
 	x(1) = (e-pe)/DT;
 	x(2) = th_e;
 	x(3) = (th_e-pth_e)/DT;
+	x(4) = state.v - tv;
+
+	Eigen::Vector2f ustar = -K * x;
 
 	float ff = std::atan2((L*k), (double)1.0);
-	float fb = YAW_P2P((-K * x)(0));
+	float fb = YAW_P2P(ustar(0));
 	float delta = ff+fb;
+	float ai = ustar(1);
 
 	pe = e;
 	pth_e = th_e;
-	return delta; 
+	return {ai, delta}; 
 };
 
 
@@ -147,7 +166,7 @@ void update (State& state, float a, float delta){
 
 void closed_loop_prediction(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profile, Poi_f goal){
 	float T = 500.0;
-	float goal_dis = 0.5;
+	float goal_dis = 0.3;
 	float stop_speed = 0.05;
 
 	State state(-0.0, -0.0, 0.0, 0.0);
@@ -166,29 +185,18 @@ void closed_loop_prediction(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f spee
 
 	float e = 0;
 	float e_th = 0;
-	int ind = 0;
 
-
-  cv::namedWindow("lqr", cv::WINDOW_NORMAL);
+  cv::namedWindow("lqr_full", cv::WINDOW_NORMAL);
   int count = 0;
+	Vec_f x_h;
+	Vec_f y_h;
 
-
-	cv::Mat bg(2000, 2000, CV_8UC3, cv::Scalar(255, 255, 255));
-	for(unsigned int i=1; i<cx.size(); i++){
-		cv::line(
-			bg,
-			cv_offset(cx[i-1], cy[i-1], bg.cols, bg.rows),
-			cv_offset(cx[i], cy[i], bg.cols, bg.rows),
-			cv::Scalar(0, 0, 0),
-			10);
-	}
 
 	while (T >= time_){
-		float di = lqr_steering_control(state, cx, cy, cyaw, ck, ind, e, e_th);
-		float ai = KP * (speed_profile[ind]-state.v);
-	  update(state, ai, di);
-
-		if (std::abs(state.v) <= stop_speed) ind += 1;
+		Vec_f control = lqr_steering_control(state, cx, cy, cyaw, ck, speed_profile, e, e_th);
+		// float ai = KP * (speed_profile[ind]-state.v);
+	  update(state, control[0], control[1]);
+		// if (std::abs(state.v) <= stop_speed) ind += 1;
 
 		float dx = state.x - goal[0];
 		float dy = state.y - goal[1];
@@ -197,25 +205,50 @@ void closed_loop_prediction(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f spee
 			break;
 		}
 
-		cv::circle(
-			bg,
-			cv_offset(state.x, state.y, bg.cols, bg.rows),
-			10, cv::Scalar(0, 0, 255), -1);
+		x_h.push_back(state.x);
+		y_h.push_back(state.y);
 
-		//save image in build/bin/pngs
-		// struct timeval tp;
-		// gettimeofday(&tp, NULL);
-		// long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-		// std::string int_count = std::to_string(ms);
-		// cv::imwrite("./pngs/"+int_count+".png", bg);
-		cv::imshow("lqr", bg);
-		cv::waitKey(5);
+		// visualization
+		cv::Mat bg(2000, 3000, CV_8UC3, cv::Scalar(255, 255, 255));
+		for(unsigned int i=1; i<cx.size(); i++){
+			cv::line(
+				bg,
+				cv_offset(cx[i-1], cy[i-1], bg.cols, bg.rows),
+				cv_offset(cx[i], cy[i], bg.cols, bg.rows),
+				cv::Scalar(0, 0, 0),
+				10);
+		}
+
+		for(unsigned int j=0; j< x_h.size(); j++){
+			cv::circle(
+				bg,
+				cv_offset(x_h[j], y_h[j], bg.cols, bg.rows),
+				10, cv::Scalar(0, 0, 255), -1);
+		}
+
+		cv::putText(
+			bg,
+			"Speed: " + std::to_string(state.v*3.6).substr(0, 4) + "km/h",
+			cv::Point2i((int)bg.cols*0.5, (int)bg.rows*0.1),
+			cv::FONT_HERSHEY_SIMPLEX,
+			3, 
+			cv::Scalar(0, 0, 0),
+			10);
+
+		// save image in build/bin/pngs
+		struct timeval tp;
+		gettimeofday(&tp, NULL);
+		long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+		std::string int_count = std::to_string(ms);
+		cv::imwrite("./pngs/"+int_count+".png", bg);
+		// cv::imshow("lqr_full", bg);
+		// cv::waitKey(5);
 	}
 };
 
 int main(){
-	Vec_f wx({0.0, 6.0,  12.5, 10.0, 7.5, 3.0, -1.0});
-	Vec_f wy({0.0, -3.0, -5.0,  6.5, 3.0, 5.0, -2.0});
+	Vec_f wx({0.0, 6.0,  12.5, 10.0, 17.5, 20.0, 25.0});
+	Vec_f wy({0.0, -3.0, -5.0,  6.5, 3.0, 0.0, 0.0});
 
   Spline2D csp_obj(wx, wy);
 	Vec_f r_x;
