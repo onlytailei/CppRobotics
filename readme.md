@@ -33,7 +33,7 @@ Find all the executable files in ***build/bin***.
     * [Frenet Frame Trajectory](#frenet-frame-trajectory)
 * [Path Tracking](#path-tracking)
     * [LQR Sterring Control](#lqr-steering-control)
-    * [LQR Speed and Sterring Control](#lqr-speed-steering-control)
+    * [LQR Speed and Sterring Control](#lqr-speed-and-steering-control)
 
 
 # Localization
