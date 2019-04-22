@@ -39,7 +39,6 @@
 
 using namespace cpprobotics;
 
-using Vec_Path=std::vector<FrenetPath>;
 
 float sum_of_power(std::vector<float> value_list){
 	float sum = 0;

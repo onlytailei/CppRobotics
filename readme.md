@@ -31,6 +31,9 @@ Find all the executable files in ***build/bin***.
     * [Cubic Spline Planner](#cubic-spline-planner)
     * [State Lattice Planner](#state-lattice-planner)
     * [Frenet Frame Trajectory](#frenet-frame-trajectory)
+* [Path Tracking](#path-tracking)
+    * [LQR Sterring Control](#lqr-steering-control)
+
 
 # Localization
 ## Extended Kalman Filter Localization
@@ -97,3 +100,11 @@ This part is based on the bicycle motion model.
 <img src="https://ram-lab.com/file/tailei/gif/frenet.gif" alt="frenet" width="400"/>
 
 [Optimal Trajectory Generation for Dynamic Street Scenarios in a Frenet Frame](https://www.researchgate.net/publication/224156269_Optimal_Trajectory_Generation_for_Dynamic_Street_Scenarios_in_a_Frenet_Frame)
+
+
+# Path Tracking
+## LQR Steering Control
+* black line: the planned spline path
+* red circle: the position under lqr control
+
+<img src="https://ram-lab.com/file/tailei/gif/lqr_steering.gif" alt="frenet" width="400"/>
