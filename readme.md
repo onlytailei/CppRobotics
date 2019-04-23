@@ -108,11 +108,11 @@ This part is based on the bicycle motion model.
 * black line: the planned spline path
 * red circle: the position under lqr control
 
-<img src="https://ram-lab.com/file/tailei/gif/lqr_steering.gif" alt="frenet" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/lqr_steering.gif" alt="lqr_steering" width="400"/>
 
 
 ## LQR Speed and Steering Control
 * black line: the planned spline path
 * red circle: the position under lqr control
 
-<img src="https://ram-lab.com/file/tailei/gif/lqr_full.gif" alt="frenet" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/lqr_full.gif" alt="lqr_full" width="400"/>
