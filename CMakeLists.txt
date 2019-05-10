@@ -14,6 +14,9 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 find_package(OpenCV REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+find_package(NLopt REQUIRED)
+include_directories(${NLopt_INCLUDE_DIR})
+
 include_directories(./include)
 
 ##############################
@@ -55,3 +58,6 @@ target_link_libraries(lqr ${OpenCV_LIBS})
 
 add_executable(lqr_full src/lqr_speed_steer_control.cpp)
 target_link_libraries(lqr_full ${OpenCV_LIBS})
+
+add_executable(mpc src/model_predictive_control.cpp)
+target_link_libraries(mpc ${OpenCV_LIBS} ${NLopt_LIBRARIES})
