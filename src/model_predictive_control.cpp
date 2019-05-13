@@ -16,53 +16,55 @@
 #include <Eigen/Eigen>
 #include <cppad/cppad.hpp>
 #include <cppad/ipopt/solve.hpp>
-#include <nlopt.hpp>
 #include "cubic_spline.h"
 #include "motion_model.h"
 #include "cpprobotics_types.h"
 
 #define NX 4
-#define T 5
+#define T 6
 
-#define DT 0.1
-#define L 0.5
-#define KP 1.0
+#define DT 0.2
 #define MAX_STEER 45.0/180*M_PI
+#define MAX_DSTEER  30.0/180*M_PI
 
 #define MAX_ITER 3
 #define DU_TH 0.1
 
 #define N_IND_SEARCH 10
-#define MAX_TIME 500.0
+#define MAX_TIME 5000
 
 #define WB 2.5
 #define MAX_SPEED   55.0/3.6
 #define MIN_SPEED  -20.0/3.6
-
-#define LENGTH  4.5
-#define WIDTH 2.0
-#define BACKTOWHEEL 1.0
-#define WHEEL_LEN 0.3
-#define WHEEL_WIDTH 0.2
-#define TREAD 0.7
-#define WB 2.5 
+#define MAX_ACCEL 1.0
 
 
+// #define LENGTH  4.5
+// #define WIDTH 2.0
+// #define BACKTOWHEEL 1.0
+// #define WHEEL_LEN 0.3
+// #define WHEEL_WIDTH 0.2
+// #define TREAD 0.7
+#define WB 2.5
+
+using CppAD::AD;
 using namespace cpprobotics;
 // NOTE && TODO check T+1 condition
-using M_XREF=Eigen::Matrix<float, NX, T+1>;
-using M_DREF=Eigen::Matrix<float, 1, T+1>;
+using M_XREF=Eigen::Matrix<float, NX, T>;
+// using M_DREF=Eigen::Matrix<float, 1, T>;
 
-size_t x_start = 0;
-size_t y_start = x_start + T;
-size_t yaw_start = y_start + T;
-size_t v_start = yaw_start + T;
-size_t x_ref_start = v_start + T-1;
-size_t y_ref_start = x_ref_start + T-1;
-size_t yaw_ref_start = y_ref_start + T-1;
-size_t v_ref_start = yaw_ref_start + T-1;
-size_t delta_start = v_ref_start + T-1;
-size_t a_start = delta_start + T-1;
+int x_start = 0;
+int y_start = x_start + T;
+int yaw_start = y_start + T;
+int v_start = yaw_start + T;
+
+// size_t x_ref_start = v_start + T;
+// size_t y_ref_start = x_ref_start + T-1;
+// size_t yaw_ref_start = y_ref_start + T-1;
+// size_t v_ref_start = yaw_ref_start + T-1;
+
+int delta_start = v_start + T;
+int a_start = delta_start + T-1;
 
 cv::Point2i cv_offset(
     float x, float y, int image_width=2000, int image_height=2000){
@@ -79,47 +81,11 @@ void update(State& state, float a, float delta){
 
 	state.x = state.x + state.v * std::cos(state.yaw) * DT;
 	state.y = state.y + state.v * std::sin(state.yaw) * DT;
-	state.yaw = state.yaw + state.v / L * std::tan(delta) * DT;
+	state.yaw = state.yaw + state.v / WB * std::tan(delta) * DT;
 	state.v = state.v + a * DT;
 
 	if (state.v > MAX_SPEED) state.v = MAX_SPEED;
 	if (state.v < MIN_SPEED) state.v = MIN_SPEED;
-
-};
-
-M_XREF predict_motion(State state, Vec_f oa, Vec_f od){
-	M_XREF xbar = M_XREF::Zero();
-	xbar(0, 0) = state.x; 
-	xbar(1, 0) = state.y; 
-	xbar(2, 0) = state.v; 
-	xbar(3, 0) = state.yaw; 
-	for(int i=1; i<T+1; i++){
-		update(state, oa[i], od[i]);
-		xbar(0, i) = state.x; 
-		xbar(1, i) = state.y; 
-		xbar(2, i) = state.v; 
-		xbar(3, i) = state.yaw; 
-	}
-	return xbar;
-};
-
-void linear_mpc_control(M_XREF x_ref, M_XREF xbar, Eigen::Vector4f x0, M_DREF dref){
-	nlopt::opt opt(nlopt::LD_MMA, 2);
-	// std::vector<>
-};
-
-void iterative_linear_mpc_control(M_XREF x_ref, State state, M_DREF d_ref, Vec_f oa, Vec_f od){
-	if (oa.size()==0 || od.size()==0){
-		oa = std::vector<float>(T, 0.0);
-		od = std::vector<float>(T, 0.0);
-	}
-
-	for(int i=0; i<MAX_ITER; i++){
-		M_XREF x_bar = predict_motion(state, oa, od);
-		Eigen::Vector4f x0;
-		x0<< state.x, state.y, state.v, state.yaw;
-		linear_mpc_control(x_ref, x_bar, x0, d_ref);
-	}
 
 };
 
@@ -161,50 +127,51 @@ int calc_nearest_index(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, int pind){
 		}
 	}
 
-	float dxl = cx[ind] - state.x;
-	float dyl = cy[ind] - state.y;
-	float angle = YAW_P2P(cyaw[ind] - std::atan2(dyl, dxl));
-	if (angle < 0) mind = mind * -1;
+	// float dxl = cx[ind] - state.x;
+	// float dyl = cy[ind] - state.y;
+	// float angle = YAW_P2P(cyaw[ind] - std::atan2(dyl, dxl));
+	// if (angle < 0) mind = mind * -1;
 
 	return ind;
 };
 
 
-void calc_ref_trajectory(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f 
-ck, Vec_f sp, float dl, int& target_ind, M_XREF& xref, M_DREF& dref){
+void calc_ref_trajectory(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f
+ck, Vec_f sp, float dl, int& target_ind, M_XREF& xref){
 
-	xref = Eigen::Matrix<float, NX, T+1>::Zero();
-	dref = Eigen::Matrix<float, 1, T+1>::Zero();
+	xref = M_XREF::Zero();
+	// dref = Eigen::Matrix<float, 1, T>::Zero();
 
 	int ncourse = cx.size();
 
 	int ind = calc_nearest_index(state, cx, cy, cyaw, target_ind);
-	if (target_ind > ind) ind = target_ind;
+	if (target_ind >= ind) ind = target_ind;
 
 	xref(0, 0) = cx[ind];
 	xref(1, 0) = cy[ind];
-	xref(2, 0) = sp[ind];
-	xref(3, 0) = cyaw[ind];
-	dref(0, 0) = 0.0;
+	xref(2, 0) = cyaw[ind];
+	xref(3, 0) = sp[ind];
 
 	float travel = 0.0;
 
-	for(int i=0; i<T+1; i++){
+	for(int i=0; i<T; i++){
 		travel += std::abs(state.v) * DT;
 		int dind = (int)std::round(travel/dl);
+		// int dind = i;
+
 
 		if ((ind+dind)<ncourse){
 			xref(0, i) = cx[ind + dind];
 			xref(1, i) = cy[ind + dind];
-			xref(2, i) = sp[ind + dind];
-			xref(3, i) = cyaw[ind + dind];
-			dref(0, i) = 0.0;
+			xref(2, i) = cyaw[ind + dind];
+			xref(3, i) = sp[ind + dind];
+			// dref(0, i) = 0.0;
 		}else{
 			xref(0, i) = cx[ncourse - 1];
 			xref(1, i) = cy[ncourse - 1];
-			xref(2, i) = sp[ncourse - 1];
-			xref(3, i) = cyaw[ncourse - 1];
-			dref(0, i) = 0.0;
+			xref(2, i) = cyaw[ncourse - 1];
+			xref(3, i) = sp[ncourse - 1];
+			// dref(0, i) = 0.0;
 		}
 	}
 
@@ -227,64 +194,53 @@ void smooth_yaw(Vec_f& cyaw){
 	}
 };
 
-class MPC {
- public:
-  MPC();
-
-  virtual ~MPC();
-
-  // Solve the model given an initial state and polynomial coefficients.
-  // Return the first actuatotions.
-  //vector<double> Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs);
-  Solution Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs);
-
-  double delta_prev {0};
-  double a_prev {0.1};
-
-};
 
 class FG_EVAL{
 	public:
 		// Eigen::VectorXd coeeffs;
 		M_XREF traj_ref;
 
-		FG_eval(M_XREF traj_ref){
+		FG_EVAL(M_XREF traj_ref){
 			this->traj_ref = traj_ref;
 		}
 
-		typedef CPPAD_TESTVECTOR(AD<float>) ADVector;
+		typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
 
 		void operator()(ADvector& fg, const ADvector& vars){
 			fg[0] = 0;
 
 			for(int i=0; i<T-1; i++){
-				fg[0] += CppAD::pow(vars[delta_start+i], 2);
-				fg[0] += CppAD::pow(vars[a_start+i], 2);
+				fg[0] +=  0.01 * CppAD::pow(vars[a_start+i], 2);
+				fg[0] += 0.01 * CppAD::pow(vars[delta_start+i], 2);
 			}
 
 			for(int i=0; i<T-2; i++){
-				fg[0] += CppAD::pow(vars[delta_start+i+1] - vars[delta_start+i], 2);
-				fg[0] += CppAD::pow(vars[a_start+i+1] - vars[a_start+i], 2);
+				fg[0] += 0.01 * CppAD::pow(vars[a_start+i+1] - vars[a_start+i], 2);
+				fg[0] += 1 * CppAD::pow(vars[delta_start+i+1] - vars[delta_start+i], 2);
 			}
 
 			// fix the initial state as a constraint
 			fg[1 + x_start] = vars[x_start];
 			fg[1 + y_start] = vars[y_start];
-			fg[1 + psi_start] = vars[psi_start];
+			fg[1 + yaw_start] = vars[yaw_start];
 			fg[1 + v_start] = vars[v_start];
 
- 			// The rest of the constraints
-    	for (int i = 0; i < N - 1; i++) {
+			fg[0] += CppAD::pow(traj_ref(0, 0) - vars[x_start], 2);
+			fg[0] += CppAD::pow(traj_ref(1, 0) - vars[y_start], 2);
+			fg[0] += 0.5 * CppAD::pow(traj_ref(2, 0) - vars[yaw_start], 2);
+			fg[0] += 0.5 * CppAD::pow(traj_ref(3, 0) - vars[v_start], 2);
+      // The rest of the constraints
+      for (int i = 0; i < T - 1; i++) {
 				// The state at time t+1 .
 				AD<double> x1 = vars[x_start + i + 1];
 				AD<double> y1 = vars[y_start + i + 1];
-				AD<double> psi1 = vars[psi_start + i + 1];
+				AD<double> yaw1 = vars[yaw_start + i + 1];
 				AD<double> v1 = vars[v_start + i + 1];
 
 				// The state at time t.
 				AD<double> x0 = vars[x_start + i];
 				AD<double> y0 = vars[y_start + i];
-				AD<double> psi0 = vars[psi_start + i];
+				AD<double> yaw0 = vars[yaw_start + i];
 				AD<double> v0 = vars[v_start + i];
 
 				// Only consider the actuation at time t.
@@ -292,147 +248,150 @@ class FG_EVAL{
 				AD<double> a0 = vars[a_start + i];
 
 				// constraint with the dynamic model
-				fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * DT);
-				fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(psi0) * DT);
-				fg[2 + psi_start + i] = psi1 - (psi0 + v0 * delta0 / WB * DT);
-				fg[2 + v_start + i] = v1 - (v0 + a0 * Dt);
-				// constraint with the ref traj
-				fg[1 + x_ref_start + i] = CppAD::pow(traj_ref(i, 0) - (x0 + v0 * CppAD::cos(psi0) * DT), 2);
-				fg[1 + y_ref_start + i] = CppAD::pow(traj_ref(i, 1) - (y0 + v0 * CppAD::sin(psi0) * DT), 2);
-				fg[1 + psi_ref_start + i] = 0.5*CppAD::pow((traj_ref(i, 2) - (psi0 + v0 * delta0 / Lf * DT), 2);
-				fg[1 + v_ref_start + i] = 0.5*CppAD::pow((traj_ref(i, 3) - (v0 + a0 * Dt), 2);
+				fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(yaw0) * DT);
+				fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(yaw0) * DT);
+				fg[2 + yaw_start + i] = yaw1 - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT);
+				fg[2 + v_start + i] = v1 - (v0 + a0 * DT);
+				// cost with the ref traj
+				fg[0] += CppAD::pow(traj_ref(0, i+1) - (x0 + v0 * CppAD::cos(yaw0) * DT), 2);
+				fg[0] += CppAD::pow(traj_ref(1, i+1) - (y0 + v0 * CppAD::sin(yaw0) * DT), 2);
+				fg[0] += 0.5 * CppAD::pow(traj_ref(2, i+1) - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT), 2);
+				fg[0] += 0.5 * CppAD::pow(traj_ref(3, i+1) - (v0 + a0 * DT), 2);
 			}
 		}
 };
 
-class MPC{
-	public:
-		MPC();
+Vec_f mpc_solve(State x0, M_XREF traj_ref){
+	
+  typedef CPPAD_TESTVECTOR(double) Dvector;
+  double x = x0.x;
+  double y = x0.y;
+  double yaw = x0.yaw;
+  double v = x0.v;
 
-		Solution Solve(Eigen::Vectoc4f x0, M_REF traj_ref){
-			  typedef CPPAD_TESTVECTOR(double) Dvector;
-			  double x = x0[0];
-				double y = x0[1];
-				double psi = x0[2];
-				double v = x0[3];
+	size_t n_vars = T * 4 + (T - 1) * 2;
+	size_t n_constraints = T * 4;
 
-				size_t n_vars = T * 4 + (T - 1) * 2;
-				size_t n_constraints = T * 8 - 4;
+	Dvector vars(n_vars);
+	for (int i = 0; i < n_vars; i++){
+		vars[i] = 0.0;
+	}
 
-				Dvector vars(n_vars);
-				for (int i = 0; i < n_vars; i++){
-					vars[i] = 0.0;
-				}
+	vars[x_start] = x;
+	vars[y_start] = y;
+	vars[yaw_start] = yaw;
+	vars[v_start] = v;
 
-				vars[x_start] = x;
-				vars[y_start] = y;
-				vars[psi_start] = psi;
-				vars[v_start] = v;
-				// vars[x_ref_start] = 0;
-				// vars[y_ref_start] = 0;
-				// vars[psi_ref_start] = 0;
-				// vars[v_ref_start] = 0;
+	// Lower and upper limits for x
+	Dvector vars_lowerbound(n_vars);
+	Dvector vars_upperbound(n_vars);
 
-	  		// Lower and upper limits for x
-				Dvector vars_lowerbound(n_vars);
-				Dvector vars_upperbound(n_vars);
+	// Set all non-actuators upper and lowerlimits
+	// to the max negative and positive values.
+	for (auto i = 0; i < n_vars; i++) {
+		vars_lowerbound[i] = -100;
+		vars_upperbound[i] = 100;
+	}
 
-				// Set all non-actuators upper and lowerlimits
-				// to the max negative and positive values.
-				for (int i = delta_start; i < delta_start+T; i++) {
-					vars_lowerbound[i] = -MAX_STEER;
-					vars_upperbound[i] = MAX_STEER;
-				}
+	for (auto i = delta_start; i < delta_start+T-1; i++) {
+		vars_lowerbound[i] = -MAX_STEER;
+		vars_upperbound[i] = MAX_STEER;
+	}
 
-				for (int i = delta_start; i < delta_start+T; i++) {
-					vars_lowerbound[i] = -MAX_ACCEL;
-					vars_upperbound[i] = MAX_ACCEL;
-				}
+	for (auto i = a_start; i < a_start+T-1; i++) {
+		vars_lowerbound[i] = -MAX_ACCEL;
+		vars_upperbound[i] = MAX_ACCEL;
+	}
 
-				for (int i = v_start; i < v_start+T; i++) {
-					vars_lowerbound[i] = MIN_SPEED;
-					vars_upperbound[i] = MAX_SPEED;
-				}
+	for (auto i = v_start; i < v_start+T; i++) {
+		vars_lowerbound[i] = MIN_SPEED;
+		vars_upperbound[i] = MAX_SPEED;
+	}
 
-			Dvector constraints_lowerbound(n_constraints);
-			Dvector constraints_upperbound(n_constraints);
-			for (int i = 0; i < n_constraints; i++) {
-				constraints_lowerbound[i] = 0;
-				constraints_upperbound[i] = 0;
-			}
-			constraints_lowerbound[x_start] = x;
-			constraints_lowerbound[y_start] = y;
-			constraints_lowerbound[psi_start] = psi;
-			constraints_lowerbound[v_start] = v;
+	Dvector constraints_lowerbound(n_constraints);
+	Dvector constraints_upperbound(n_constraints);
+	for (auto i = 0; i < n_constraints; i++) {
+		constraints_lowerbound[i] = 0;
+		constraints_upperbound[i] = 0;
+	}
+	constraints_lowerbound[x_start] = x;
+	constraints_lowerbound[y_start] = y;
+	constraints_lowerbound[yaw_start] = yaw;
+	constraints_lowerbound[v_start] = v;
 
-			constraints_upperbound[x_start] = x;
-			constraints_upperbound[y_start] = y;
-			constraints_upperbound[psi_start] = psi;
-			constraints_upperbound[v_start] = v;
+	constraints_upperbound[x_start] = x;
+	constraints_upperbound[y_start] = y;
+	constraints_upperbound[yaw_start] = yaw;
+	constraints_upperbound[v_start] = v;
 
-			FG_eval fg_eval(traj_ref);
+	FG_EVAL fg_eval(traj_ref);
 
-			// options
-			std::string options;
-			options += "Integer print_level  0\n";
-			options += "Sparse  true        forward\n";
-			options += "Sparse  true        reverse\n";
-			options += "Numeric max_cpu_time          0.05\n";
+	// options
+	std::string options;
+	options += "Integer print_level  0\n";
+	options += "Sparse  true        forward\n";
+	options += "Sparse  true        reverse\n";
+	options += "Integer max_iter      10\n";
+	options += "Numeric tol          1e-6\n";
+	options += "Numeric max_cpu_time          0.05\n";
 
-			// place to return solution
-			CppAD::ipopt::solve_result<Dvector> solution;
+	// place to return solution
+	CppAD::ipopt::solve_result<Dvector> solution;
 
-			// solve the problem
-			CppAD::ipopt::solve<Dvector, FG_eval>(
-				options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
-				constraints_upperbound, fg_eval, solution);
+	// solve the problem
+	CppAD::ipopt::solve<Dvector, FG_EVAL>(
+			options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
+			constraints_upperbound, fg_eval, solution);
 
-			bool ok = true;
-  		ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
-  		//cout << "ok " << ok << endl;
+	bool ok = true;
+	ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
-		}
-
-}
+	Vec_f checking;
+	for (auto i =0 ; i < n_vars; i++) {
+		checking.push_back((float)solution.x[i]);
+	}
+	return {(float)solution.x[a_start], (float)solution.x[delta_start]};
+};
 
 void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profile, Poi_f goal){
-	State state(cx[0], cy[0], cyaw[0], 0.0);
+	State state(cx[0], cy[0], cyaw[0], speed_profile[0]);
 
 	if ((state.yaw - cyaw[0]) >= M_PI) state.yaw -= M_PI * 2.0;
 	else if ((state.yaw - cyaw[0]) <= -1.0*M_PI) state.yaw += M_PI * 2.0;
 
-	float time_ = 0.0;
-	Vec_f x;
-	x.push_back(state.x);
-	Vec_f y;
-	y.push_back(state.y);
-	Vec_f yaw;
-	yaw.push_back(state.yaw);
-	Vec_f v;
-	v.push_back(state.v);
-	Vec_f t;
-	t.push_back(0.0);
+	int iter_count = 0;
+	// Vec_f x;
+	// x.push_back(state.x);
+	// Vec_f y;
+	// y.push_back(state.y);
+	// Vec_f yaw;
+	// yaw.push_back(state.yaw);
+	// Vec_f v;
+	// v.push_back(state.v);
+	// Vec_f t;
+	// t.push_back(0.0);
 
 	int target_ind = 0;
 	calc_nearest_index(state, cx, cy, cyaw, target_ind);
 
 	smooth_yaw(cyaw);
 
+  // cv::namedWindow("lqr_full", cv::WINDOW_NORMAL);
+  // int count = 0;
+	float goal_dis = 0.3;
 
-  cv::namedWindow("lqr_full", cv::WINDOW_NORMAL);
-  int count = 0;
 	Vec_f x_h;
 	Vec_f y_h;
 
-
 	M_XREF	xref;
-	M_DREF	dref;
+	// M_DREF	dref;
 
-	while (MAX_TIME >= time_){
-		calc_ref_trajectory(state, cx, cy, cyaw, ck, speed_profile, 1.0, target_ind, xref, dref);
+	while (MAX_TIME >= iter_count){
+		calc_ref_trajectory(state, cx, cy, cyaw, ck, speed_profile, 1.0, target_ind, xref);
+		// iterative_linear_mpc_control(xref, state, dref, oa, od);
+		Vec_f output = mpc_solve(state, xref);
 
-		iterative_linear_mpc_control();
-
+		update(state, output[0], output[1]);
 
 		float dx = state.x - goal[0];
 		float dy = state.y - goal[1];
@@ -445,46 +404,50 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 		y_h.push_back(state.y);
 
 		// visualization
-		cv::Mat bg(2000, 3000, CV_8UC3, cv::Scalar(255, 255, 255));
-		for(unsigned int i=1; i<cx.size(); i++){
-			cv::line(
-				bg,
-				cv_offset(cx[i-1], cy[i-1], bg.cols, bg.rows),
-				cv_offset(cx[i], cy[i], bg.cols, bg.rows),
-				cv::Scalar(0, 0, 0),
-				10);
-		}
+		// cv::Mat bg(2000, 3000, CV_8UC3, cv::Scalar(255, 255, 255));
+		// for(unsigned int i=1; i<cx.size(); i++){
+		// 	cv::line(
+		// 		bg,
+		// 		cv_offset(cx[i-1], cy[i-1], bg.cols, bg.rows),
+		// 		cv_offset(cx[i], cy[i], bg.cols, bg.rows),
+		// 		cv::Scalar(0, 0, 0),
+		// 		10);
+		// }
 
-		for(unsigned int j=0; j< x_h.size(); j++){
-			cv::circle(
-				bg,
-				cv_offset(x_h[j], y_h[j], bg.cols, bg.rows),
-				10, cv::Scalar(0, 0, 255), -1);
-		}
+		// for(unsigned int j=0; j< x_h.size(); j++){
+		// 	cv::circle(
+		// 		bg,
+		// 		cv_offset(x_h[j], y_h[j], bg.cols, bg.rows),
+		// 		10, cv::Scalar(0, 0, 255), -1);
+		// }
 
-		cv::putText(
-			bg,
-			"Speed: " + std::to_string(state.v*3.6).substr(0, 4) + "km/h",
-			cv::Point2i((int)bg.cols*0.5, (int)bg.rows*0.1),
-			cv::FONT_HERSHEY_SIMPLEX,
-			3,
-			cv::Scalar(0, 0, 0),
-			10);
+		// cv::putText(
+		// 	bg,
+		// 	"Speed: " + std::to_string(state.v*3.6).substr(0, 4) + "km/h",
+		// 	cv::Point2i((int)bg.cols*0.5, (int)bg.rows*0.1),
+		// 	cv::FONT_HERSHEY_SIMPLEX,
+		// 	3,
+		// 	cv::Scalar(0, 0, 0),
+		// 	10);
 
 		// save image in build/bin/pngs
-		struct timeval tp;
-		gettimeofday(&tp, NULL);
-		long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-		std::string int_count = std::to_string(ms);
-		cv::imwrite("./pngs/"+int_count+".png", bg);
+		// struct timeval tp;
+		// gettimeofday(&tp, NULL);
+		// long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+		// std::string int_count = std::to_string(ms);
+		// cv::imwrite("./pngs/"+int_count+".png", bg);
+
 		// cv::imshow("lqr_full", bg);
 		// cv::waitKey(5);
+		iter_count++;
 	}
 };
 
 int main(){
-    Vec_f wx({0.0, 60.0, 125.0,  50.0,  75.0,  30.0, -10.0});
-    Vec_f wy({0.0,  0.0,  50.0,  65.0,  30.0,  50.0, -20.0});
+
+	Vec_f wx({0.0, 10.0, 20.0,  40.0,  50.0,  60.0, 70.0});
+	// Vec_f wy({0.0,  4.0,  -4.0,  4.0,  -4.0,  4.0, 0.0});
+	Vec_f wy({0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0});
 
   Spline2D csp_obj(wx, wy);
 	Vec_f r_x;
@@ -505,5 +468,4 @@ int main(){
 	Vec_f speed_profile = calc_speed_profile(r_x, r_y, ryaw, target_speed);
 
 	mpc_simulation(r_x, r_y, ryaw, rcurvature, speed_profile, {{wx.back(), wy.back()}});
-
 }
