@@ -39,29 +39,22 @@
 #define MAX_ACCEL 1.0
 
 
-// #define LENGTH  4.5
-// #define WIDTH 2.0
-// #define BACKTOWHEEL 1.0
-// #define WHEEL_LEN 0.3
-// #define WHEEL_WIDTH 0.2
-// #define TREAD 0.7
+#define LENGTH  4.5
+#define WIDTH 2.0
+#define BACKTOWHEEL 1.0
+#define WHEEL_LEN 0.3
+#define WHEEL_WIDTH 0.2
+#define TREAD 0.7
 #define WB 2.5
 
 using CppAD::AD;
 using namespace cpprobotics;
-// NOTE && TODO check T+1 condition
 using M_XREF=Eigen::Matrix<float, NX, T>;
-// using M_DREF=Eigen::Matrix<float, 1, T>;
 
 int x_start = 0;
 int y_start = x_start + T;
 int yaw_start = y_start + T;
 int v_start = yaw_start + T;
-
-// size_t x_ref_start = v_start + T;
-// size_t y_ref_start = x_ref_start + T-1;
-// size_t yaw_ref_start = y_ref_start + T-1;
-// size_t v_ref_start = yaw_ref_start + T-1;
 
 int delta_start = v_start + T;
 int a_start = delta_start + T-1;
@@ -288,6 +281,7 @@ Vec_f mpc_solve(State x0, M_XREF traj_ref){
 
 	// Set all non-actuators upper and lowerlimits
 	// to the max negative and positive values.
+	// NOTE there mush be both lower and upper bounds for all vars!!!!!
 	for (auto i = 0; i < n_vars; i++) {
 		vars_lowerbound[i] = -100;
 		vars_upperbound[i] = 100;
@@ -346,11 +340,11 @@ Vec_f mpc_solve(State x0, M_XREF traj_ref){
 	bool ok = true;
 	ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
-	Vec_f checking;
+	Vec_f result;
 	for (auto i =0 ; i < n_vars; i++) {
-		checking.push_back((float)solution.x[i]);
+		result.push_back((float)solution.x[i]);
 	}
-	return {(float)solution.x[a_start], (float)solution.x[delta_start]};
+	return result;
 };
 
 void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profile, Poi_f goal){
@@ -359,39 +353,29 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 	if ((state.yaw - cyaw[0]) >= M_PI) state.yaw -= M_PI * 2.0;
 	else if ((state.yaw - cyaw[0]) <= -1.0*M_PI) state.yaw += M_PI * 2.0;
 
+	float goal_dis = 0.3;
 	int iter_count = 0;
-	// Vec_f x;
-	// x.push_back(state.x);
-	// Vec_f y;
-	// y.push_back(state.y);
-	// Vec_f yaw;
-	// yaw.push_back(state.yaw);
-	// Vec_f v;
-	// v.push_back(state.v);
-	// Vec_f t;
-	// t.push_back(0.0);
 
 	int target_ind = 0;
 	calc_nearest_index(state, cx, cy, cyaw, target_ind);
 
 	smooth_yaw(cyaw);
 
-  // cv::namedWindow("lqr_full", cv::WINDOW_NORMAL);
-  // int count = 0;
-	float goal_dis = 0.3;
+	// visualization
+  cv::namedWindow("mpc", cv::WINDOW_NORMAL);
+  int count = 0;
 
-	Vec_f x_h;
-	Vec_f y_h;
+	// Vec_f x_h;
+	// Vec_f y_h;
 
 	M_XREF	xref;
-	// M_DREF	dref;
 
 	while (MAX_TIME >= iter_count){
 		calc_ref_trajectory(state, cx, cy, cyaw, ck, speed_profile, 1.0, target_ind, xref);
-		// iterative_linear_mpc_control(xref, state, dref, oa, od);
+
 		Vec_f output = mpc_solve(state, xref);
 
-		update(state, output[0], output[1]);
+		update(state, output[a_start], output[delta_start]);
 
 		float dx = state.x - goal[0];
 		float dy = state.y - goal[1];
@@ -400,26 +384,26 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 			break;
 		}
 
-		x_h.push_back(state.x);
-		y_h.push_back(state.y);
+		// x_h.push_back(state.x);
+		// y_h.push_back(state.y);
 
 		// visualization
-		// cv::Mat bg(2000, 3000, CV_8UC3, cv::Scalar(255, 255, 255));
-		// for(unsigned int i=1; i<cx.size(); i++){
-		// 	cv::line(
-		// 		bg,
-		// 		cv_offset(cx[i-1], cy[i-1], bg.cols, bg.rows),
-		// 		cv_offset(cx[i], cy[i], bg.cols, bg.rows),
-		// 		cv::Scalar(0, 0, 0),
-		// 		10);
-		// }
+		cv::Mat bg(2000, 3000, CV_8UC3, cv::Scalar(255, 255, 255));
+		for(unsigned int i=1; i<cx.size(); i++){
+			cv::line(
+				bg,
+				cv_offset(cx[i-1], cy[i-1], bg.cols, bg.rows),
+				cv_offset(cx[i], cy[i], bg.cols, bg.rows),
+				cv::Scalar(0, 0, 0),
+				10);
+		}
 
-		// for(unsigned int j=0; j< x_h.size(); j++){
-		// 	cv::circle(
-		// 		bg,
-		// 		cv_offset(x_h[j], y_h[j], bg.cols, bg.rows),
-		// 		10, cv::Scalar(0, 0, 255), -1);
-		// }
+		for(unsigned int j=0; j< T; j++){
+			cv::circle(
+				bg,
+				cv_offset(output[x_start+j], output[y_start+j], bg.cols, bg.rows),
+				10, cv::Scalar(0, 0, 255), -1);
+		}
 
 		// cv::putText(
 		// 	bg,
@@ -437,17 +421,17 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 		// std::string int_count = std::to_string(ms);
 		// cv::imwrite("./pngs/"+int_count+".png", bg);
 
-		// cv::imshow("lqr_full", bg);
-		// cv::waitKey(5);
+		cv::imshow("mpc", bg);
+		cv::waitKey(5);
 		iter_count++;
 	}
 };
 
 int main(){
 
-	Vec_f wx({0.0, 10.0, 20.0,  40.0,  50.0,  60.0, 70.0});
-	// Vec_f wy({0.0,  4.0,  -4.0,  4.0,  -4.0,  4.0, 0.0});
-	Vec_f wy({0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0});
+	Vec_f wx({0.0, 5.0, 10.0,  15.0,  20.0,  25.0,  30.0});
+	Vec_f wy({0.0,  4.0,  -4.0,  4.0,  -4.0,  4.0,  0.0});
+	// Vec_f wy({0.0,  1.0,  -1.0,  1.0,  -1.0,  1.0, -1.0});
 
   Spline2D csp_obj(wx, wy);
 	Vec_f r_x;
