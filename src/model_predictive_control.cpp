@@ -429,9 +429,9 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 
 int main(){
 
-	Vec_f wx({0.0, 5.0, 10.0,  15.0,  20.0,  25.0,  30.0});
-	Vec_f wy({0.0,  4.0,  -4.0,  4.0,  -4.0,  4.0,  0.0});
-	// Vec_f wy({0.0,  1.0,  -1.0,  1.0,  -1.0,  1.0, -1.0});
+	Vec_f wx({0.0, 5.0, 10.0,  15.0,   20.0,  25.0,  30.0});
+	// Vec_f wy({0.0,  4.0,  -4.0,  4.0,  -4.0,   4.0,  0.0});
+	Vec_f wy({0.0,  1.0,  -1.0,  1.0,  -1.0,  1.0, -1.0});
 
   Spline2D csp_obj(wx, wy);
 	Vec_f r_x;
