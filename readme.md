@@ -123,7 +123,7 @@ This part is based on the bicycle motion model.
 ## MPC Speed and Steering Control
 * black line: the planned spline path
 * blue line: the passed path
-* yellow cross: the reference trajectory for MPC
-(To compile this part, you need to uncomment the related lines in CMakeLists.txt and install CppAD and IPOPT.)
+* yellow cross: the reference trajectory for MPC    
+(To compile this part, you need to uncomment the related lines in CMakeLists.txt and install [CppAD](https://www.coin-or.org/CppAD/Doc/install.htm) and [IPOPT](https://www.coin-or.org/Ipopt/documentation/node14.html).)
 
 <img src="https://ram-lab.com/file/tailei/gif/mpc.gif" alt="mpc" width="400"/>
