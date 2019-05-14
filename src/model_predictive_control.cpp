@@ -62,8 +62,8 @@ int a_start = delta_start + T-1;
 cv::Point2i cv_offset(
     float x, float y, int image_width=2000, int image_height=2000){
   cv::Point2i output;
-  output.x = int(x * 100) + 300;
-  output.y = image_height - int(y * 100) - image_height/2;
+  output.x = int(x * 20) + 300;
+  output.y = image_height - int(y * 20) - image_height/5;
   return output;
 };
 
@@ -74,7 +74,7 @@ void update(State& state, float a, float delta){
 
 	state.x = state.x + state.v * std::cos(state.yaw) * DT;
 	state.y = state.y + state.v * std::sin(state.yaw) * DT;
-	state.yaw = state.yaw + state.v / WB * std::tan(delta) * DT;
+	state.yaw = state.yaw + state.v / WB * CppAD::tan(delta) * DT;
 	state.v = state.v + a * DT;
 
 	if (state.v > MAX_SPEED) state.v = MAX_SPEED;
@@ -218,10 +218,10 @@ class FG_EVAL{
 			fg[1 + yaw_start] = vars[yaw_start];
 			fg[1 + v_start] = vars[v_start];
 
-			fg[0] += CppAD::pow(traj_ref(0, 0) - vars[x_start], 2);
-			fg[0] += CppAD::pow(traj_ref(1, 0) - vars[y_start], 2);
-			fg[0] += 0.5 * CppAD::pow(traj_ref(2, 0) - vars[yaw_start], 2);
-			fg[0] += 0.5 * CppAD::pow(traj_ref(3, 0) - vars[v_start], 2);
+			// fg[0] += CppAD::pow(traj_ref(0, 0) - vars[x_start], 2);
+			// fg[0] += CppAD::pow(traj_ref(1, 0) - vars[y_start], 2);
+			// fg[0] += 0.5 * CppAD::pow(traj_ref(2, 0) - vars[yaw_start], 2);
+			// fg[0] += 0.5 * CppAD::pow(traj_ref(3, 0) - vars[v_start], 2);
       // The rest of the constraints
       for (int i = 0; i < T - 1; i++) {
 				// The state at time t+1 .
@@ -283,8 +283,8 @@ Vec_f mpc_solve(State x0, M_XREF traj_ref){
 	// to the max negative and positive values.
 	// NOTE there mush be both lower and upper bounds for all vars!!!!!
 	for (auto i = 0; i < n_vars; i++) {
-		vars_lowerbound[i] = -100;
-		vars_upperbound[i] = 100;
+		vars_lowerbound[i] = -10000000.0;
+		vars_upperbound[i] = 10000000.0;
 	}
 
 	for (auto i = delta_start; i < delta_start+T-1; i++) {
@@ -323,10 +323,10 @@ Vec_f mpc_solve(State x0, M_XREF traj_ref){
 	// options
 	std::string options;
 	options += "Integer print_level  0\n";
-	options += "Sparse  true        forward\n";
+	// options += "Sparse  true        forward\n";
 	options += "Sparse  true        reverse\n";
-	options += "Integer max_iter      10\n";
-	options += "Numeric tol          1e-6\n";
+	options += "Integer max_iter      50\n";
+	// options += "Numeric tol          1e-6\n";
 	options += "Numeric max_cpu_time          0.05\n";
 
 	// place to return solution
@@ -353,7 +353,7 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 	if ((state.yaw - cyaw[0]) >= M_PI) state.yaw -= M_PI * 2.0;
 	else if ((state.yaw - cyaw[0]) <= -1.0*M_PI) state.yaw += M_PI * 2.0;
 
-	float goal_dis = 0.3;
+	float goal_dis = 0.5;
 	int iter_count = 0;
 
 	int target_ind = 0;
@@ -365,8 +365,8 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
   cv::namedWindow("mpc", cv::WINDOW_NORMAL);
   int count = 0;
 
-	// Vec_f x_h;
-	// Vec_f y_h;
+	Vec_f x_h;
+	Vec_f y_h;
 
 	M_XREF	xref;
 
@@ -377,6 +377,8 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 
 		update(state, output[a_start], output[delta_start]);
 
+		float steer = output[delta_start];
+
 		float dx = state.x - goal[0];
 		float dy = state.y - goal[1];
 		if (std::sqrt(dx*dx + dy*dy) <= goal_dis) {
@@ -384,8 +386,8 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 			break;
 		}
 
-		// x_h.push_back(state.x);
-		// y_h.push_back(state.y);
+		x_h.push_back(state.x);
+		y_h.push_back(state.y);
 
 		// visualization
 		cv::Mat bg(2000, 3000, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -398,22 +400,59 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 				10);
 		}
 
-		for(unsigned int j=0; j< T; j++){
+		// for(unsigned int j=0; j< T; j++){
+		// 	cv::circle(
+		// 		bg,
+		// 		cv_offset(output[x_start+j], output[y_start+j], bg.cols, bg.rows),
+		// 		10, cv::Scalar(0, 0, 255), -1);
+		// }
+		
+		for(unsigned int k=0; k<x_h.size(); k++){
 			cv::circle(
 				bg,
-				cv_offset(output[x_start+j], output[y_start+j], bg.cols, bg.rows),
-				10, cv::Scalar(0, 0, 255), -1);
+				cv_offset(x_h[k], y_h[k], bg.cols, bg.rows),
+				8, cv::Scalar(255, 0, 0), -1);
 		}
+		
 
-		// cv::putText(
-		// 	bg,
-		// 	"Speed: " + std::to_string(state.v*3.6).substr(0, 4) + "km/h",
-		// 	cv::Point2i((int)bg.cols*0.5, (int)bg.rows*0.1),
-		// 	cv::FONT_HERSHEY_SIMPLEX,
-		// 	3,
-		// 	cv::Scalar(0, 0, 0),
-		// 	10);
-
+    cv::line(
+      bg,
+      cv_offset(state.x, state.y, bg.cols, bg.rows),
+      cv_offset(state.x + std::cos(state.yaw)*WB*2, state.y + std::sin(state.yaw)*WB*2, bg.cols, bg.rows),
+      cv::Scalar(255,0,255),
+      15);
+    
+		cv::line(
+      bg,
+      cv_offset(state.x + std::cos(state.yaw)*0.5, 
+								state.y + std::sin(state.yaw)*0.5,
+								bg.cols, bg.rows),
+      cv_offset(state.x - std::cos(state.yaw)*0.5, 
+								state.y - std::sin(state.yaw)*0.5,
+								bg.cols, bg.rows),
+      cv::Scalar(255,0,127),
+      30);
+    
+		cv::line(
+      bg,
+      cv_offset(state.x + std::cos(state.yaw)*WB*2 + std::cos(state.yaw+steer)*0.5, 
+								state.y + std::sin(state.yaw)*WB*2 + std::sin(state.yaw+steer)*0.5,
+								bg.cols, bg.rows),
+      cv_offset(state.x + std::cos(state.yaw)*WB*2 - std::cos(state.yaw+steer)*0.5, 
+								state.y + std::sin(state.yaw)*WB*2 - std::sin(state.yaw+steer)*0.5, 
+								bg.cols, bg.rows),
+      cv::Scalar(255,0,127),
+      30);
+		
+		for(unsigned int k=0; k<xref.cols(); k++){
+			cv::drawMarker(
+				bg,
+				cv_offset(xref(0, k), xref(1, k), bg.cols, bg.rows),
+				cv::Scalar(0, 255, 255),
+				cv::MARKER_CROSS,
+				20, 3);
+		}
+    
 		// save image in build/bin/pngs
 		// struct timeval tp;
 		// gettimeofday(&tp, NULL);
@@ -429,9 +468,9 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 
 int main(){
 
-	Vec_f wx({0.0, 5.0, 10.0,  15.0,   20.0,  25.0,  30.0});
+	Vec_f wx({0.0, 60.0, 125.0,  50.0,   75.0,  35.0,  -10.0});
 	// Vec_f wy({0.0,  4.0,  -4.0,  4.0,  -4.0,   4.0,  0.0});
-	Vec_f wy({0.0,  1.0,  -1.0,  1.0,  -1.0,  1.0, -1.0});
+	Vec_f wy({0.0,  0.0,  50.0,  65.0,   30.0,  50.0,  -20.0});
 
   Spline2D csp_obj(wx, wy);
 	Vec_f r_x;

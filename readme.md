@@ -34,7 +34,8 @@ Find all the executable files in ***build/bin***.
     * [Frenet Frame Trajectory](#frenet-frame-trajectory)
 * [Path Tracking](#path-tracking)
     * [LQR Sterring Control](#lqr-steering-control)
-    * [LQR Speed and Sterring Control](#lqr-speed-and-steering-control)
+    * [LQR Speed and Steering Control](#lqr-speed-and-steering-control)
+    * [Model Predictive Speed and Steering Control](#mpc-speed-and-steering-control)
 
 
 # Localization
@@ -117,3 +118,12 @@ This part is based on the bicycle motion model.
 * red circle: the position under lqr control
 
 <img src="https://ram-lab.com/file/tailei/gif/lqr_full.gif" alt="lqr_full" width="400"/>
+
+
+## MPC Speed and Steering Control
+* black line: the planned spline path
+* blue line: the passed path
+* yellow cross: the reference trajectory for MPC
+(To compile this part, you need to uncomment the related lines in CMakeLists.txt and install CppAD and IPOPT.)
+
+<img src="https://ram-lab.com/file/tailei/gif/mpc.gif" alt="mpc" width="400"/>
