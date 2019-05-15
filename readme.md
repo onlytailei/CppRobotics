@@ -6,7 +6,7 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 - cmake
 - opencv 3.3
 - Eigen 3
-- ipopt / CppAD (*for MPC convex optimization*)
+- [CppAD](https://www.coin-or.org/CppAD/Doc/install.htm) / [IPOPT](https://www.coin-or.org/Ipopt/documentation/node14.html) (*for MPC convex optimization*)
 - ~~ROS~~ (*To make the repo lightweight :)*)
 
 ## Build
