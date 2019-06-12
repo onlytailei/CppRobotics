@@ -19,11 +19,12 @@ Find all the executable files in ***build/bin***.
 
 # Table of Contents
 * [Localization](#localization)
-    * [Extended kalmam filter](#extended-kalman-filter-localization)
-    * [Particle filter](#particle-filter-localization)
+    * [Extended Kalman Filter](#extended-kalman-filter-localization)
+    * Unscented Kalman Filter
+    * [Particle Filter](#particle-filter-localization)
     * Histogram filter
 * [Mapping](#mapping)
-    * Gaussian grid map
+    * Gaussian Grid Map
 * [SLAM](#SLAM)
     * FastSLAM 1.0
 * [Path Planning](#path-planning)
