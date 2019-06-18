@@ -90,9 +90,9 @@ Vec_f calc_speed_profile(Vec_f rx, Vec_f ry, Vec_f ryaw, float target_speed){
     float move_direction = std::atan2(dy, dx);
 
     if (dx != 0.0 && dy != 0.0){
-        float dangle = std::abs(YAW_P2P(move_direction - ryaw[i]));
-        if (dangle >= M_PI/4.0) direction = -1.0;
-        else direction = 1.0;
+      float dangle = std::abs(YAW_P2P(move_direction - ryaw[i]));
+      if (dangle >= M_PI/4.0) direction = -1.0;
+      else direction = 1.0;
     }
 
     if (direction != 1.0) speed_profile[i] = -1 * target_speed;
@@ -366,7 +366,7 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
   Vec_f x_h;
   Vec_f y_h;
 
-  M_XREF	xref;
+  M_XREF xref;
 
   while (MAX_TIME >= iter_count){
     calc_ref_trajectory(state, cx, cy, cyaw, ck, speed_profile, 1.0, target_ind, xref);

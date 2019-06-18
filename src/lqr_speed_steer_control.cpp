@@ -53,10 +53,10 @@ Vec_f calc_speed_profile(Vec_f rx, Vec_f ry, Vec_f ryaw, float target_speed){
   }
 
   for(int k=0; k< 40; k++){
-      *(speed_profile.end()-k) = target_speed / (50 - k);
-      if (*(speed_profile.end()-k) <= 1.0 / 3.6){
-        *(speed_profile.end()-k) = 1.0 / 3.6;
-      }
+    *(speed_profile.end()-k) = target_speed / (50 - k);
+    if (*(speed_profile.end()-k) <= 1.0 / 3.6){
+      *(speed_profile.end()-k) = 1.0 / 3.6;
+    }
   }
   return speed_profile;
 };
@@ -100,9 +100,9 @@ Matrix5f solve_DARE(Matrix5f A, Matrix52f B, Matrix5f Q, Eigen::Matrix2f R){
 };
 
 Matrix25f dlqr(Matrix5f A, Matrix52f B, Matrix5f Q, Eigen::Matrix2f R){
-	Matrix5f X = solve_DARE(A, B ,Q, R);
-	Matrix25f K = (B.transpose()*X*B + R).inverse() * (B.transpose()*X*A);
-	return K;
+  Matrix5f X = solve_DARE(A, B ,Q, R);
+  Matrix25f K = (B.transpose()*X*B + R).inverse() * (B.transpose()*X*A);
+  return K;
 };
 
 Vec_f lqr_steering_control(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f sp, float& pe, float& pth_e){
