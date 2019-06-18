@@ -7,7 +7,7 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 - opencv 3.3
 - Eigen 3
 - [CppAD](https://www.coin-or.org/CppAD/Doc/install.htm) / [IPOPT](https://www.coin-or.org/Ipopt/documentation/node14.html) (*for MPC convex optimization*)
-- ~~ROS~~ (*To make the repo lightweight :)*)
+- ~~ROS~~ (*~~To make the repo lightweight :)~~. Yet, we may still need it for 3D visualization.*) 
 
 ## Build
      $ mkdir build
@@ -36,7 +36,9 @@ Find all the executable files in ***build/bin***.
     * [LQR Sterring Control](#lqr-steering-control)
     * [LQR Speed and Steering Control](#lqr-speed-and-steering-control)
     * [Model Predictive Speed and Steering Control](#mpc-speed-and-steering-control)
-
+* [Aerial Navigation](#aerial-navigation)
+     * Drone 3D Trajectory Following
+     * Rocket Powered Landing
 
 # Localization
 ## Extended Kalman Filter Localization
