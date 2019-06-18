@@ -189,73 +189,74 @@ void smooth_yaw(Vec_f& cyaw){
 
 
 class FG_EVAL{
-	public:
-		// Eigen::VectorXd coeeffs;
-		M_XREF traj_ref;
+public:
+	// Eigen::VectorXd coeeffs;
+	M_XREF traj_ref;
 
-		FG_EVAL(M_XREF traj_ref){
-			this->traj_ref = traj_ref;
+	FG_EVAL(M_XREF traj_ref){
+		this->traj_ref = traj_ref;
+	}
+
+	typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
+
+	void operator()(ADvector& fg, const ADvector& vars){
+		fg[0] = 0;
+
+		for(int i=0; i<T-1; i++){
+			fg[0] +=  0.01 * CppAD::pow(vars[a_start+i], 2);
+			fg[0] += 0.01 * CppAD::pow(vars[delta_start+i], 2);
 		}
 
-		typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
-
-		void operator()(ADvector& fg, const ADvector& vars){
-			fg[0] = 0;
-
-			for(int i=0; i<T-1; i++){
-				fg[0] +=  0.01 * CppAD::pow(vars[a_start+i], 2);
-				fg[0] += 0.01 * CppAD::pow(vars[delta_start+i], 2);
-			}
-
-			for(int i=0; i<T-2; i++){
-				fg[0] += 0.01 * CppAD::pow(vars[a_start+i+1] - vars[a_start+i], 2);
-				fg[0] += 1 * CppAD::pow(vars[delta_start+i+1] - vars[delta_start+i], 2);
-			}
-
-			// fix the initial state as a constraint
-			fg[1 + x_start] = vars[x_start];
-			fg[1 + y_start] = vars[y_start];
-			fg[1 + yaw_start] = vars[yaw_start];
-			fg[1 + v_start] = vars[v_start];
-
-			// fg[0] += CppAD::pow(traj_ref(0, 0) - vars[x_start], 2);
-			// fg[0] += CppAD::pow(traj_ref(1, 0) - vars[y_start], 2);
-			// fg[0] += 0.5 * CppAD::pow(traj_ref(2, 0) - vars[yaw_start], 2);
-			// fg[0] += 0.5 * CppAD::pow(traj_ref(3, 0) - vars[v_start], 2);
-      // The rest of the constraints
-      for (int i = 0; i < T - 1; i++) {
-				// The state at time t+1 .
-				AD<double> x1 = vars[x_start + i + 1];
-				AD<double> y1 = vars[y_start + i + 1];
-				AD<double> yaw1 = vars[yaw_start + i + 1];
-				AD<double> v1 = vars[v_start + i + 1];
-
-				// The state at time t.
-				AD<double> x0 = vars[x_start + i];
-				AD<double> y0 = vars[y_start + i];
-				AD<double> yaw0 = vars[yaw_start + i];
-				AD<double> v0 = vars[v_start + i];
-
-				// Only consider the actuation at time t.
-				AD<double> delta0 = vars[delta_start + i];
-				AD<double> a0 = vars[a_start + i];
-
-				// constraint with the dynamic model
-				fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(yaw0) * DT);
-				fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(yaw0) * DT);
-				fg[2 + yaw_start + i] = yaw1 - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT);
-				fg[2 + v_start + i] = v1 - (v0 + a0 * DT);
-				// cost with the ref traj
-				fg[0] += CppAD::pow(traj_ref(0, i+1) - (x0 + v0 * CppAD::cos(yaw0) * DT), 2);
-				fg[0] += CppAD::pow(traj_ref(1, i+1) - (y0 + v0 * CppAD::sin(yaw0) * DT), 2);
-				fg[0] += 0.5 * CppAD::pow(traj_ref(2, i+1) - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT), 2);
-				fg[0] += 0.5 * CppAD::pow(traj_ref(3, i+1) - (v0 + a0 * DT), 2);
-			}
+		for(int i=0; i<T-2; i++){
+			fg[0] += 0.01 * CppAD::pow(vars[a_start+i+1] - vars[a_start+i], 2);
+			fg[0] += 1 * CppAD::pow(vars[delta_start+i+1] - vars[delta_start+i], 2);
 		}
+
+		// fix the initial state as a constraint
+		fg[1 + x_start] = vars[x_start];
+		fg[1 + y_start] = vars[y_start];
+		fg[1 + yaw_start] = vars[yaw_start];
+		fg[1 + v_start] = vars[v_start];
+
+		// fg[0] += CppAD::pow(traj_ref(0, 0) - vars[x_start], 2);
+		// fg[0] += CppAD::pow(traj_ref(1, 0) - vars[y_start], 2);
+		// fg[0] += 0.5 * CppAD::pow(traj_ref(2, 0) - vars[yaw_start], 2);
+		// fg[0] += 0.5 * CppAD::pow(traj_ref(3, 0) - vars[v_start], 2);
+
+        // The rest of the constraints
+        for (int i = 0; i < T - 1; i++) {
+    		// The state at time t+1 .
+    		AD<double> x1 = vars[x_start + i + 1];
+    		AD<double> y1 = vars[y_start + i + 1];
+    		AD<double> yaw1 = vars[yaw_start + i + 1];
+    		AD<double> v1 = vars[v_start + i + 1];
+
+    		// The state at time t.
+    		AD<double> x0 = vars[x_start + i];
+    		AD<double> y0 = vars[y_start + i];
+    		AD<double> yaw0 = vars[yaw_start + i];
+    		AD<double> v0 = vars[v_start + i];
+
+    		// Only consider the actuation at time t.
+    		AD<double> delta0 = vars[delta_start + i];
+    		AD<double> a0 = vars[a_start + i];
+
+    		// constraint with the dynamic model
+    		fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(yaw0) * DT);
+    		fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(yaw0) * DT);
+    		fg[2 + yaw_start + i] = yaw1 - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT);
+    		fg[2 + v_start + i] = v1 - (v0 + a0 * DT);
+    		// cost with the ref traj
+    		fg[0] += CppAD::pow(traj_ref(0, i+1) - (x0 + v0 * CppAD::cos(yaw0) * DT), 2);
+    		fg[0] += CppAD::pow(traj_ref(1, i+1) - (y0 + v0 * CppAD::sin(yaw0) * DT), 2);
+    		fg[0] += 0.5 * CppAD::pow(traj_ref(2, i+1) - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT), 2);
+    		fg[0] += 0.5 * CppAD::pow(traj_ref(3, i+1) - (v0 + a0 * DT), 2);
+    	}
+    }
 };
 
 Vec_f mpc_solve(State x0, M_XREF traj_ref){
-	
+
   typedef CPPAD_TESTVECTOR(double) Dvector;
   double x = x0.x;
   double y = x0.y;
@@ -406,14 +407,14 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 		// 		cv_offset(output[x_start+j], output[y_start+j], bg.cols, bg.rows),
 		// 		10, cv::Scalar(0, 0, 255), -1);
 		// }
-		
+
 		for(unsigned int k=0; k<x_h.size(); k++){
 			cv::circle(
 				bg,
 				cv_offset(x_h[k], y_h[k], bg.cols, bg.rows),
 				8, cv::Scalar(255, 0, 0), -1);
 		}
-		
+
 
     cv::line(
       bg,
@@ -421,29 +422,29 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
       cv_offset(state.x + std::cos(state.yaw)*WB*2, state.y + std::sin(state.yaw)*WB*2, bg.cols, bg.rows),
       cv::Scalar(255,0,255),
       15);
-    
+
 		cv::line(
       bg,
-      cv_offset(state.x + std::cos(state.yaw)*0.5, 
+      cv_offset(state.x + std::cos(state.yaw)*0.5,
 								state.y + std::sin(state.yaw)*0.5,
 								bg.cols, bg.rows),
-      cv_offset(state.x - std::cos(state.yaw)*0.5, 
+      cv_offset(state.x - std::cos(state.yaw)*0.5,
 								state.y - std::sin(state.yaw)*0.5,
 								bg.cols, bg.rows),
       cv::Scalar(255,0,127),
       30);
-    
+
 		cv::line(
       bg,
-      cv_offset(state.x + std::cos(state.yaw)*WB*2 + std::cos(state.yaw+steer)*0.5, 
+      cv_offset(state.x + std::cos(state.yaw)*WB*2 + std::cos(state.yaw+steer)*0.5,
 								state.y + std::sin(state.yaw)*WB*2 + std::sin(state.yaw+steer)*0.5,
 								bg.cols, bg.rows),
-      cv_offset(state.x + std::cos(state.yaw)*WB*2 - std::cos(state.yaw+steer)*0.5, 
-								state.y + std::sin(state.yaw)*WB*2 - std::sin(state.yaw+steer)*0.5, 
+      cv_offset(state.x + std::cos(state.yaw)*WB*2 - std::cos(state.yaw+steer)*0.5,
+								state.y + std::sin(state.yaw)*WB*2 - std::sin(state.yaw+steer)*0.5,
 								bg.cols, bg.rows),
       cv::Scalar(255,0,127),
       30);
-		
+
 		for(unsigned int k=0; k<xref.cols(); k++){
 			cv::drawMarker(
 				bg,
@@ -452,7 +453,7 @@ void mpc_simulation(Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck, Vec_f speed_profil
 				cv::MARKER_CROSS,
 				20, 3);
 		}
-    
+
 		// save image in build/bin/pngs
 		// struct timeval tp;
 		// gettimeofday(&tp, NULL);
