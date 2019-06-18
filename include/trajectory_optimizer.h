@@ -182,18 +182,18 @@ float TrajectoryOptimizer::selection_learning_param(Eigen::Vector3f dp){
   float da = 0.5;
 
   for(float a=mina; a<maxa; a+=da){
-      Parameter new_p = p;
-      new_p.distance += a * dp[0];
-      new_p.steering_sequence[1] += a * dp[1];
-      new_p.steering_sequence[2] += a * dp[2];
-      TrajState laststate = m_model.generate_last_state(new_p);
-      TrajState dc = calc_diff(laststate);
-      float cost = std::sqrt(std::pow(dc.x, 2)+std::pow(dc.y, 2)+std::pow(dc.yaw, 2));
+    Parameter new_p = p;
+    new_p.distance += a * dp[0];
+    new_p.steering_sequence[1] += a * dp[1];
+    new_p.steering_sequence[2] += a * dp[2];
+    TrajState laststate = m_model.generate_last_state(new_p);
+    TrajState dc = calc_diff(laststate);
+    float cost = std::sqrt(std::pow(dc.x, 2)+std::pow(dc.y, 2)+std::pow(dc.yaw, 2));
 
-      if ((cost <= mincost) && (a != 0.0)){
-          mina = a;
-          mincost = cost;
-      }
+    if ((cost <= mincost) && (a != 0.0)){
+        mina = a;
+        mincost = cost;
+    }
   }
 
   return mina;

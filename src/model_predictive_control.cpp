@@ -59,8 +59,7 @@ int v_start = yaw_start + T;
 int delta_start = v_start + T;
 int a_start = delta_start + T-1;
 
-cv::Point2i cv_offset(float x, float y, int image_width=2000, 
-											int image_height=2000){
+cv::Point2i cv_offset(float x, float y, int image_width=2000, int image_height=2000){
   cv::Point2i output;
   output.x = int(x * 20) + 300;
   output.y = image_height - int(y * 20) - image_height/5;
@@ -68,17 +67,16 @@ cv::Point2i cv_offset(float x, float y, int image_width=2000,
 };
 
 void update(State& state, float a, float delta){
+  if (delta >= MAX_STEER) delta = MAX_STEER;
+  if (delta <= - MAX_STEER) delta = - MAX_STEER;
 
-	if (delta >= MAX_STEER) delta = MAX_STEER;
-	if (delta <= - MAX_STEER) delta = - MAX_STEER;
+  state.x = state.x + state.v * std::cos(state.yaw) * DT;
+  state.y = state.y + state.v * std::sin(state.yaw) * DT;
+  state.yaw = state.yaw + state.v / WB * CppAD::tan(delta) * DT;
+  state.v = state.v + a * DT;
 
-	state.x = state.x + state.v * std::cos(state.yaw) * DT;
-	state.y = state.y + state.v * std::sin(state.yaw) * DT;
-	state.yaw = state.yaw + state.v / WB * CppAD::tan(delta) * DT;
-	state.v = state.v + a * DT;
-
-	if (state.v > MAX_SPEED) state.v = MAX_SPEED;
-	if (state.v < MIN_SPEED) state.v = MIN_SPEED;
+  if (state.v > MAX_SPEED) state.v = MAX_SPEED;
+  if (state.v < MIN_SPEED) state.v = MIN_SPEED;
 
 };
 

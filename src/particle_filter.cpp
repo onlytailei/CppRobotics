@@ -156,9 +156,8 @@ cv::Point2i cv_offset(
 };
 
 void ellipse_drawing(
-  cv::Mat bg_img, Eigen::Matrix2f pest, Eigen::Vector2f center,
-  cv::Scalar ellipse_color={0, 0, 255}
-){
+    cv::Mat bg_img, Eigen::Matrix2f pest, Eigen::Vector2f center,
+    cv::Scalar ellipse_color={0, 0, 255}){
   Eigen::EigenSolver<Eigen::Matrix2f> ces(pest);
   Eigen::Matrix2f e_value = ces.pseudoEigenvalueMatrix();
   Eigen::Matrix2f e_vector = ces.pseudoEigenvectors();
