@@ -154,13 +154,13 @@ Vec_f lqr_steering_control(State state, Vec_f cx, Vec_f cy, Vec_f cyaw, Vec_f ck
 
 void update (State& state, float a, float delta){
 
-    if (delta >= MAX_STEER) delta = MAX_STEER;
-    if (delta <= - MAX_STEER) delta = - MAX_STEER;
+	if (delta >= MAX_STEER) delta = MAX_STEER;
+	if (delta <= - MAX_STEER) delta = - MAX_STEER;
 
-    state.x = state.x + state.v * std::cos(state.yaw) * DT;
-    state.y = state.y + state.v * std::sin(state.yaw) * DT;
-    state.yaw = state.yaw + state.v / L * std::tan(delta) * DT;
-    state.v = state.v + a * DT;
+	state.x = state.x + state.v * std::cos(state.yaw) * DT;
+	state.y = state.y + state.v * std::sin(state.yaw) * DT;
+	state.yaw = state.yaw + state.v / L * std::tan(delta) * DT;
+	state.v = state.v + a * DT;
 
 };
 

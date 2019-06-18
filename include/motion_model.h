@@ -58,53 +58,53 @@ using ParameterList = std::vector<Parameter>;
 
 std::vector<float> quadratic_interpolation(
     std::array<float, 3> x, std::array<float, 3> y){
-    Eigen::Matrix3f A;
-    Eigen::Vector3f Y;
-    A<< std::pow(x[0], 2), x[0], 1,
-        std::pow(x[1], 2), x[1], 1,
-        std::pow(x[2], 2), x[2], 1;
-    Y<<y[0], y[1], y[2];
+  Eigen::Matrix3f A;
+  Eigen::Vector3f Y;
+  A<< std::pow(x[0], 2), x[0], 1,
+      std::pow(x[1], 2), x[1], 1,
+      std::pow(x[2], 2), x[2], 1;
+  Y<<y[0], y[1], y[2];
 
-    Eigen::Vector3f result = A.inverse() * Y;
-    float* result_data = result.data();
-    std::vector<float> result_array(result_data, result_data+3);
-    return result_array;
+  Eigen::Vector3f result = A.inverse() * Y;
+  float* result_data = result.data();
+  std::vector<float> result_array(result_data, result_data+3);
+  return result_array;
 }
 
 float interp_refer(std::vector<float> para, float x){
-    return para[0] * x * x + para[1] * x + para[2];
+  return para[0] * x * x + para[1] * x + para[2];
 }
 
 
 class MotionModel{
-  public:
-    const float base_l;
-    const float ds;
-    State state;
+public:
+  const float base_l;
+  const float ds;
+  State state;
 
-    MotionModel(float base_l_, float ds_, State state_):
-      base_l(base_l_), ds(ds_), state(state_){};
-    void update(float v_, float delta, float dt);
-    State update(State state_, float delta, float dt);
-    Traj generate_trajectory(Parameter);
-    TrajState generate_last_state(Parameter);
+  MotionModel(float base_l_, float ds_, State state_):
+    base_l(base_l_), ds(ds_), state(state_){};
+  void update(float v_, float delta, float dt);
+  State update(State state_, float delta, float dt);
+  Traj generate_trajectory(Parameter);
+  TrajState generate_last_state(Parameter);
 
 };
 
 void MotionModel::update(float v_, float delta, float dt){
-    state.v = v_;
-    state.x = state.x + state.v * std::cos(state.yaw) * dt;
-    state.y = state.y + state.v * std::sin(state.yaw) * dt;
-    state.yaw = state.yaw + state.v / base_l * std::tan(delta) * dt;
-    state.yaw = YAW_P2P(state.yaw);
+  state.v = v_;
+  state.x = state.x + state.v * std::cos(state.yaw) * dt;
+  state.y = state.y + state.v * std::sin(state.yaw) * dt;
+  state.yaw = state.yaw + state.v / base_l * std::tan(delta) * dt;
+  state.yaw = YAW_P2P(state.yaw);
 };
 
 State MotionModel::update(State state_, float delta, float dt){
-    state_.x = state_.x + state_.v * std::cos(state_.yaw) * dt;
-    state_.y = state_.y + state_.v * std::sin(state_.yaw) * dt;
-    state_.yaw = state_.yaw + state_.v / base_l * std::tan(delta) * dt;
-    state_.yaw = YAW_P2P(state_.yaw);
-    return state_;
+  state_.x = state_.x + state_.v * std::cos(state_.yaw) * dt;
+  state_.y = state_.y + state_.v * std::sin(state_.yaw) * dt;
+  state_.yaw = state_.yaw + state_.v / base_l * std::tan(delta) * dt;
+  state_.yaw = YAW_P2P(state_.yaw);
+  return state_;
 };
 
 Traj MotionModel::generate_trajectory(Parameter p){
@@ -122,10 +122,10 @@ Traj MotionModel::generate_trajectory(Parameter p){
   State state_ = state;
 
   for(float i=0.0; i<horizon; i+=horizon/n){
-      float kp = interp_refer(spline, i);
-      state_ = update(state_, kp, horizon/n);
-      TrajState xyyaw{state_.x, state_.y, state_.yaw};
-      output.push_back(xyyaw);
+    float kp = interp_refer(spline, i);
+    state_ = update(state_, kp, horizon/n);
+    TrajState xyyaw{state_.x, state_.y, state_.yaw};
+    output.push_back(xyyaw);
   }
   return output;
 }

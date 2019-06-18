@@ -51,9 +51,9 @@ Eigen::Vector2f observation_model(Eigen::Vector4f x){
 
 // TODO gaussian likelihood
 float gauss_likelihood(float x, float sigma){
-    float p = 1.0 / std::sqrt(2.0 * PI * sigma * sigma) * \
-        std::exp(-x * x / (2 * sigma * sigma));
-    return p;
+  float p = 1.0 / std::sqrt(2.0 * PI * sigma * sigma) * \
+      std::exp(-x * x / (2 * sigma * sigma));
+  return p;
 };
 
 Eigen::Matrix4f calc_covariance(
@@ -71,40 +71,40 @@ Eigen::Matrix4f calc_covariance(
 };
 
 void pf_localization(
-  Eigen::Matrix<float, 4, NP>& px, Eigen::Matrix<float, NP, 1>& pw,
-  Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst,
-  std::vector<Eigen::RowVector3f> z, Eigen::Vector2f u,
-  Eigen::Matrix2f Rsim, float Q,
-  std::mt19937 gen,  std::normal_distribution<> gaussian_d
-  ){
+    Eigen::Matrix<float, 4, NP>& px, Eigen::Matrix<float, NP, 1>& pw,
+    Eigen::Vector4f& xEst, Eigen::Matrix4f& PEst,
+    std::vector<Eigen::RowVector3f> z, Eigen::Vector2f u,
+    Eigen::Matrix2f Rsim, float Q,
+    std::mt19937 gen,  std::normal_distribution<> gaussian_d
+    ){
 
-    for(int ip=0; ip<NP; ip++){
-      Eigen::Vector4f x = px.col(ip);
-      float w = pw(ip);
+  for(int ip=0; ip<NP; ip++){
+    Eigen::Vector4f x = px.col(ip);
+    float w = pw(ip);
 
-      Eigen::Vector2f ud;
+    Eigen::Vector2f ud;
 
-      ud(0) = u(0) + gaussian_d(gen) * Rsim(0,0);
-      ud(1) = u(1) + gaussian_d(gen) * Rsim(1,1);
+    ud(0) = u(0) + gaussian_d(gen) * Rsim(0,0);
+    ud(1) = u(1) + gaussian_d(gen) * Rsim(1,1);
 
-      x = motion_model(x, ud);
+    x = motion_model(x, ud);
 
-      for(unsigned int i=0; i<z.size(); i++){
-          Eigen::RowVector3f item = z[i];
-          float dx = x(0) - item(1);
-          float dy = x(1) - item(2);
-          float prez = std::sqrt(dx*dx + dy*dy);
-          float dz = prez - item(0);
-          w = w * gauss_likelihood(dz, std::sqrt(Q));
-      }
-      px.col(ip) = x;
-      pw(ip) = w;
+    for(unsigned int i=0; i<z.size(); i++){
+        Eigen::RowVector3f item = z[i];
+        float dx = x(0) - item(1);
+        float dy = x(1) - item(2);
+        float prez = std::sqrt(dx*dx + dy*dy);
+        float dz = prez - item(0);
+        w = w * gauss_likelihood(dz, std::sqrt(Q));
     }
+    px.col(ip) = x;
+    pw(ip) = w;
+  }
 
-    pw = pw / pw.sum();
+  pw = pw / pw.sum();
 
-    xEst = px * pw;
-    PEst = calc_covariance(xEst, px, pw);
+  xEst = px * pw;
+  PEst = calc_covariance(xEst, px, pw);
 
 };
 
@@ -118,10 +118,10 @@ Eigen::Matrix<float, NP, 1> cumsum(Eigen::Matrix<float, NP, 1> pw){
 }
 
 void resampling(
-      Eigen::Matrix<float, 4, NP>& px,
-      Eigen::Matrix<float, NP, 1>& pw,
-      std::mt19937 gen,
-      std::uniform_real_distribution<> uni_d){
+    Eigen::Matrix<float, 4, NP>& px,
+    Eigen::Matrix<float, NP, 1>& pw,
+    std::mt19937 gen,
+    std::uniform_real_distribution<> uni_d){
 
   float Neff = 1.0 / (pw.transpose() * pw);
   if (Neff < NTh){

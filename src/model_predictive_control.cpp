@@ -59,8 +59,8 @@ int v_start = yaw_start + T;
 int delta_start = v_start + T;
 int a_start = delta_start + T-1;
 
-cv::Point2i cv_offset(
-    float x, float y, int image_width=2000, int image_height=2000){
+cv::Point2i cv_offset(float x, float y, int image_width=2000, 
+											int image_height=2000){
   cv::Point2i output;
   output.x = int(x * 20) + 300;
   output.y = image_height - int(y * 20) - image_height/5;
@@ -89,16 +89,16 @@ Vec_f calc_speed_profile(Vec_f rx, Vec_f ry, Vec_f ryaw, float target_speed){
 	for(unsigned int i=0; i < ryaw.size()-1; i++){
 		float dx = rx[i+1] - rx[i];
 		float dy = ry[i+1] - ry[i];
-        float move_direction = std::atan2(dy, dx);
+		float move_direction = std::atan2(dy, dx);
 
-        if (dx != 0.0 && dy != 0.0){
-            float dangle = std::abs(YAW_P2P(move_direction - ryaw[i]));
-            if (dangle >= M_PI/4.0) direction = -1.0;
-            else direction = 1.0;
-        }
+		if (dx != 0.0 && dy != 0.0){
+				float dangle = std::abs(YAW_P2P(move_direction - ryaw[i]));
+				if (dangle >= M_PI/4.0) direction = -1.0;
+				else direction = 1.0;
+		}
 
-        if (direction != 1.0) speed_profile[i] = -1 * target_speed;
-        else speed_profile[i] = target_speed;
+		if (direction != 1.0) speed_profile[i] = -1 * target_speed;
+		else speed_profile[i] = target_speed;
 
 	}
   speed_profile[-1] = 0.0;
@@ -223,36 +223,36 @@ public:
 		// fg[0] += 0.5 * CppAD::pow(traj_ref(2, 0) - vars[yaw_start], 2);
 		// fg[0] += 0.5 * CppAD::pow(traj_ref(3, 0) - vars[v_start], 2);
 
-        // The rest of the constraints
-        for (int i = 0; i < T - 1; i++) {
-    		// The state at time t+1 .
-    		AD<double> x1 = vars[x_start + i + 1];
-    		AD<double> y1 = vars[y_start + i + 1];
-    		AD<double> yaw1 = vars[yaw_start + i + 1];
-    		AD<double> v1 = vars[v_start + i + 1];
+    // The rest of the constraints
+    for (int i = 0; i < T - 1; i++) {
+			// The state at time t+1 .
+			AD<double> x1 = vars[x_start + i + 1];
+			AD<double> y1 = vars[y_start + i + 1];
+			AD<double> yaw1 = vars[yaw_start + i + 1];
+			AD<double> v1 = vars[v_start + i + 1];
 
-    		// The state at time t.
-    		AD<double> x0 = vars[x_start + i];
-    		AD<double> y0 = vars[y_start + i];
-    		AD<double> yaw0 = vars[yaw_start + i];
-    		AD<double> v0 = vars[v_start + i];
+			// The state at time t.
+			AD<double> x0 = vars[x_start + i];
+			AD<double> y0 = vars[y_start + i];
+			AD<double> yaw0 = vars[yaw_start + i];
+			AD<double> v0 = vars[v_start + i];
 
-    		// Only consider the actuation at time t.
-    		AD<double> delta0 = vars[delta_start + i];
-    		AD<double> a0 = vars[a_start + i];
+			// Only consider the actuation at time t.
+			AD<double> delta0 = vars[delta_start + i];
+			AD<double> a0 = vars[a_start + i];
 
-    		// constraint with the dynamic model
-    		fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(yaw0) * DT);
-    		fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(yaw0) * DT);
-    		fg[2 + yaw_start + i] = yaw1 - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT);
-    		fg[2 + v_start + i] = v1 - (v0 + a0 * DT);
-    		// cost with the ref traj
-    		fg[0] += CppAD::pow(traj_ref(0, i+1) - (x0 + v0 * CppAD::cos(yaw0) * DT), 2);
-    		fg[0] += CppAD::pow(traj_ref(1, i+1) - (y0 + v0 * CppAD::sin(yaw0) * DT), 2);
-    		fg[0] += 0.5 * CppAD::pow(traj_ref(2, i+1) - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT), 2);
-    		fg[0] += 0.5 * CppAD::pow(traj_ref(3, i+1) - (v0 + a0 * DT), 2);
-    	}
-    }
+			// constraint with the dynamic model
+			fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(yaw0) * DT);
+			fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(yaw0) * DT);
+			fg[2 + yaw_start + i] = yaw1 - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT);
+			fg[2 + v_start + i] = v1 - (v0 + a0 * DT);
+			// cost with the ref traj
+			fg[0] += CppAD::pow(traj_ref(0, i+1) - (x0 + v0 * CppAD::cos(yaw0) * DT), 2);
+			fg[0] += CppAD::pow(traj_ref(1, i+1) - (y0 + v0 * CppAD::sin(yaw0) * DT), 2);
+			fg[0] += 0.5 * CppAD::pow(traj_ref(2, i+1) - (yaw0 + v0 * CppAD::tan(delta0) / WB * DT), 2);
+			fg[0] += 0.5 * CppAD::pow(traj_ref(3, i+1) - (v0 + a0 * DT), 2);
+		}
+	}
 };
 
 Vec_f mpc_solve(State x0, M_XREF traj_ref){

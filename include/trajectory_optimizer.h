@@ -30,24 +30,24 @@ cv::Point2i cv_offset(
 };
 
 class TrajectoryOptimizer{
-  public:
-    MotionModel m_model;
-    Parameter p;
-    TrajState target;
+public:
+  MotionModel m_model;
+  Parameter p;
+  TrajState target;
 
-    Traj optimizer_traj(int, float, std::vector<float>, bool=false, bool=false);
-    TrajectoryOptimizer(MotionModel m_model_,
-                        Parameter init_p_,
-                        TrajState target_):
-                        m_model(m_model_),
-                        p(init_p_),
-                        target(target_){};
+  Traj optimizer_traj(int, float, std::vector<float>, bool=false, bool=false);
+  TrajectoryOptimizer(MotionModel m_model_,
+                      Parameter init_p_,
+                      TrajState target_):
+                      m_model(m_model_),
+                      p(init_p_),
+                      target(target_){};
 
-  private:
-    float selection_learning_param(Eigen::Vector3f dp);
-    TrajState calc_diff(TrajState );
-    Eigen::Matrix3f calc_J(std::vector<float>);
-    Eigen::Vector3f error_vector(Parameter test_p);
+private:
+  float selection_learning_param(Eigen::Vector3f dp);
+  TrajState calc_diff(TrajState );
+  Eigen::Matrix3f calc_J(std::vector<float>);
+  Eigen::Vector3f error_vector(Parameter test_p);
 };
 
 Traj TrajectoryOptimizer::optimizer_traj(
@@ -94,11 +94,11 @@ Traj TrajectoryOptimizer::optimizer_traj(
       }
 
       if (save){
-          struct timeval tp;
-          gettimeofday(&tp, NULL);
-          long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-          std::string int_count = std::to_string(ms);
-          cv::imwrite("./pngs/"+int_count+".png", bg);
+        struct timeval tp;
+        gettimeofday(&tp, NULL);
+        long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+        std::string int_count = std::to_string(ms);
+        cv::imwrite("./pngs/"+int_count+".png", bg);
       }
     }
 
@@ -128,76 +128,76 @@ Traj TrajectoryOptimizer::optimizer_traj(
 };
 
 TrajState TrajectoryOptimizer::calc_diff(TrajState traj_state_){
-    float yaw_ = target.yaw - traj_state_.yaw;
-    return {target.x - traj_state_.x,
-            target.y - traj_state_.y,
-            YAW_P2P(yaw_)};
+  float yaw_ = target.yaw - traj_state_.yaw;
+  return {target.x - traj_state_.x,
+          target.y - traj_state_.y,
+          YAW_P2P(yaw_)};
 };
 
 Eigen::Vector3f TrajectoryOptimizer::error_vector(Parameter test_p){
-    TrajState last_state = m_model.generate_last_state(test_p);
-    TrajState d_error = calc_diff(last_state);
-    Eigen::Vector3f d_vct;
-    d_vct<< d_error.x , d_error.y, d_error.yaw;
-    return d_vct;
+  TrajState last_state = m_model.generate_last_state(test_p);
+  TrajState d_error = calc_diff(last_state);
+  Eigen::Vector3f d_vct;
+  d_vct<< d_error.x , d_error.y, d_error.yaw;
+  return d_vct;
 
 };
 
 Eigen::Matrix3f TrajectoryOptimizer::calc_J(std::vector<float> h){
 
-    Parameter p00 = p;
-    p00.distance = p.distance + h[0];
-    Eigen::Vector3f d00_vct = error_vector(p00);
-    Parameter p01 = p;
-    p01.distance = p.distance - h[0];
-    Eigen::Vector3f d01_vct = error_vector(p01);
-    Eigen::Vector3f d0 = (d00_vct - d01_vct) / (2.0 * h[0]);
+  Parameter p00 = p;
+  p00.distance = p.distance + h[0];
+  Eigen::Vector3f d00_vct = error_vector(p00);
+  Parameter p01 = p;
+  p01.distance = p.distance - h[0];
+  Eigen::Vector3f d01_vct = error_vector(p01);
+  Eigen::Vector3f d0 = (d00_vct - d01_vct) / (2.0 * h[0]);
 
-    Parameter p10 = p;
-    p10.steering_sequence[1] = p.steering_sequence[1] + h[1];
-    Eigen::Vector3f d10_vct = error_vector(p10);
-    Parameter p11 = p;
-    p11.steering_sequence[1] = p.steering_sequence[1] - h[1];
-    Eigen::Vector3f d11_vct = error_vector(p11);
-    Eigen::Vector3f d1 = (d10_vct - d11_vct) / (2.0 * h[1]);
+  Parameter p10 = p;
+  p10.steering_sequence[1] = p.steering_sequence[1] + h[1];
+  Eigen::Vector3f d10_vct = error_vector(p10);
+  Parameter p11 = p;
+  p11.steering_sequence[1] = p.steering_sequence[1] - h[1];
+  Eigen::Vector3f d11_vct = error_vector(p11);
+  Eigen::Vector3f d1 = (d10_vct - d11_vct) / (2.0 * h[1]);
 
-    Parameter p20 = p;
-    p20.steering_sequence[2] = p.steering_sequence[2] + h[2];
-    Eigen::Vector3f d20_vct = error_vector(p20);
-    Parameter p21 = p;
-    p21.steering_sequence[2] = p.steering_sequence[2] - h[2];
-    Eigen::Vector3f d21_vct = error_vector(p21);
-    Eigen::Vector3f d2 = (d20_vct - d21_vct) / (2.0 * h[2]);
+  Parameter p20 = p;
+  p20.steering_sequence[2] = p.steering_sequence[2] + h[2];
+  Eigen::Vector3f d20_vct = error_vector(p20);
+  Parameter p21 = p;
+  p21.steering_sequence[2] = p.steering_sequence[2] - h[2];
+  Eigen::Vector3f d21_vct = error_vector(p21);
+  Eigen::Vector3f d2 = (d20_vct - d21_vct) / (2.0 * h[2]);
 
-    Eigen::Matrix3f J;
-    J<<d0, d1, d2;
-    return J;
+  Eigen::Matrix3f J;
+  J<<d0, d1, d2;
+  return J;
 };
 
 
 float TrajectoryOptimizer::selection_learning_param(Eigen::Vector3f dp){
-    float mincost = std::numeric_limits<float>::max();
-    float mina = 1.0;
-    float maxa = 2.0;
-    float da = 0.5;
+  float mincost = std::numeric_limits<float>::max();
+  float mina = 1.0;
+  float maxa = 2.0;
+  float da = 0.5;
 
-    for(float a=mina; a<maxa; a+=da){
-        Parameter new_p = p;
-        new_p.distance += a * dp[0];
-        new_p.steering_sequence[1] += a * dp[1];
-        new_p.steering_sequence[2] += a * dp[2];
-        TrajState laststate = m_model.generate_last_state(new_p);
-        TrajState dc = calc_diff(laststate);
-        float cost = std::sqrt(std::pow(dc.x, 2)+std::pow(dc.y, 2)+std::pow(dc.yaw, 2));
+  for(float a=mina; a<maxa; a+=da){
+      Parameter new_p = p;
+      new_p.distance += a * dp[0];
+      new_p.steering_sequence[1] += a * dp[1];
+      new_p.steering_sequence[2] += a * dp[2];
+      TrajState laststate = m_model.generate_last_state(new_p);
+      TrajState dc = calc_diff(laststate);
+      float cost = std::sqrt(std::pow(dc.x, 2)+std::pow(dc.y, 2)+std::pow(dc.yaw, 2));
 
-        if ((cost <= mincost) && (a != 0.0)){
-            mina = a;
-            mincost = cost;
-        }
-    }
+      if ((cost <= mincost) && (a != 0.0)){
+          mina = a;
+          mincost = cost;
+      }
+  }
 
-    return mina;
+  return mina;
 };
-}
 
+}
 #endif

@@ -114,24 +114,24 @@ StateList calc_lane_states(float l_center, float l_heading, float l_width, float
 
 Parameter search_nearest_one_from_lookuptable(TrajState target, Table csv_file){
 
-    float min_d = std::numeric_limits<float>::max();
-    int min_id = -1;
+  float min_d = std::numeric_limits<float>::max();
+  int min_id = -1;
 
-    for(unsigned int i=0; i<csv_file.size(); i++)
-    {
-      float dx = target.x - csv_file[i][0];
-      float dy = target.y - csv_file[i][1];
-      float dyaw = target.yaw - csv_file[i][2];
-      float d = std::sqrt(dx * dx + dy * dy + dyaw * dyaw);
+  for(unsigned int i=0; i<csv_file.size(); i++)
+  {
+    float dx = target.x - csv_file[i][0];
+    float dy = target.y - csv_file[i][1];
+    float dyaw = target.yaw - csv_file[i][2];
+    float d = std::sqrt(dx * dx + dy * dy + dyaw * dyaw);
 
-      if ( d<min_d ){
-        min_id = i;
-        min_d = d;
-      }
+    if ( d<min_d ){
+      min_id = i;
+      min_d = d;
     }
-    Parameter best_p(std::sqrt(target.x * target.x + target.y * target.y),
-        {{0, csv_file[min_id][4], csv_file[min_id][5]}});
-    return best_p;
+  }
+  Parameter best_p(std::sqrt(target.x * target.x + target.y * target.y),
+      {{0, csv_file[min_id][4], csv_file[min_id][5]}});
+  return best_p;
 }
 
 std::vector<Traj> generate_path(StateList states, Table csv_file, float k0=0.0){
@@ -211,21 +211,21 @@ std::vector<Traj> lane_state_sample_test(Table csv_file){
 
 int main(){
   //uniform_terminal_state_sample_test1();
-    std::vector<std::vector<float>> lookup_table;
+  std::vector<std::vector<float>> lookup_table;
 
-    std::ifstream file("../../lookuptable.csv");
-    CSVIterator loop(file);
-    loop++;
-    for(; loop != CSVIterator(); ++loop)
-    {
-      std::vector<float> temp;
-      for(int i=0; i<6; i++){
-        temp.push_back(std::stod((*loop)[i]));
-      }
-      lookup_table.push_back(temp);
+  std::ifstream file("../../lookuptable.csv");
+  CSVIterator loop(file);
+  loop++;
+  for(; loop != CSVIterator(); ++loop)
+  {
+    std::vector<float> temp;
+    for(int i=0; i<6; i++){
+      temp.push_back(std::stod((*loop)[i]));
     }
-    std::vector<Traj> traj_list1 = uniform_terminal_state_sample_test(lookup_table);
-    std::vector<Traj> traj_list2 = biased_terminal_state_sample_test(lookup_table);
-    std::vector<Traj> traj_list3 = lane_state_sample_test(lookup_table);
+    lookup_table.push_back(temp);
+  }
+  std::vector<Traj> traj_list1 = uniform_terminal_state_sample_test(lookup_table);
+  std::vector<Traj> traj_list2 = biased_terminal_state_sample_test(lookup_table);
+  std::vector<Traj> traj_list3 = lane_state_sample_test(lookup_table);
 
 };
