@@ -7,7 +7,7 @@ This is the cpp implementation of the [PythonRobotics](https://github.com/Atsush
 - opencv 3.3
 - Eigen 3
 - [CppAD](https://www.coin-or.org/CppAD/Doc/install.htm) / [IPOPT](https://www.coin-or.org/Ipopt/documentation/node14.html) (*for MPC convex optimization*)
-- ~~ROS~~ (*~~To make the repo lightweight :)~~. Yet, we may still need it for 3D visualization.*) 
+- ~~ROS~~ (*~~To make the repo lightweight :)~~. Yet, we may still need it for 3D visualization.*)
 
 ## Build
      $ mkdir build
@@ -27,6 +27,7 @@ Find all the executable files in ***build/bin***.
 * [SLAM](#SLAM)
     * FastSLAM 1.0
 * [Path Planning](#path-planning)
+    * [A Star](#a-star)
     * [Dynamic Window Approach](#dynamic-window-approach)
     * [Model Predictive Trajectory Generator](#model-predictive-trajectory-generator)
     * [Cubic Spline Planner](#cubic-spline-planner)
@@ -64,6 +65,10 @@ Find all the executable files in ***build/bin***.
 [Probabilistic Robotics](http://www.probabilistic-robotics.org/)
 
 # Path Planning
+## A star
+<img src="https://ram-lab.com/file/tailei/gif/astar.gif" alt="astar" width="400"/>
+
+
 ## Dynamic Window Approach
 * blue circle: the target point
 * red circle: the robot
