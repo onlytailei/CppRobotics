@@ -38,6 +38,9 @@ target_link_libraries(pf ${OpenCV_LIBS} )
 add_executable(astar src/a_star.cpp)
 target_link_libraries(astar ${OpenCV_LIBS} )
 
+add_executable(rrt src/rrt.cpp)
+target_link_libraries(rrt ${OpenCV_LIBS} )
+
 add_executable(dwa src/dynamic_window_approach.cpp)
 target_link_libraries(dwa ${OpenCV_LIBS} )
 

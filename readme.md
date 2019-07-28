@@ -28,12 +28,13 @@ Find all the executable files in ***build/bin***.
     * FastSLAM 1.0
 * [Path Planning](#path-planning)
     * [A Star](#a-star)
+    * [RRT](#rrt)
     * [Dynamic Window Approach](#dynamic-window-approach)
     * [Model Predictive Trajectory Generator](#model-predictive-trajectory-generator)
     * [Cubic Spline Planner](#cubic-spline-planner)
     * [State Lattice Planner](#state-lattice-planner)
     * [Frenet Frame Trajectory](#frenet-frame-trajectory)
-* [Path Tracking](#path-tracking)
+* [Path Tracking Control](#path-tracking-control)
     * [LQR Sterring Control](#lqr-steering-control)
     * [LQR Speed and Steering Control](#lqr-speed-and-steering-control)
     * [Model Predictive Speed and Steering Control](#mpc-speed-and-steering-control)
@@ -66,7 +67,16 @@ Find all the executable files in ***build/bin***.
 
 # Path Planning
 ## A star
+* blue point: the start point
+* red point: the goal point
 <img src="https://ram-lab.com/file/tailei/gif/astar.gif" alt="astar" width="400"/>
+
+
+## RRT
+* red circle: the start point
+* blue circle: the goal point
+* black circle: obstacles
+<img src="https://ram-lab.com/file/tailei/gif/rrt.gif" alt="rrt" width="400"/>
 
 
 ## Dynamic Window Approach
@@ -112,7 +122,7 @@ This part is based on the bicycle motion model.
 [Optimal Trajectory Generation for Dynamic Street Scenarios in a Frenet Frame](https://www.researchgate.net/publication/224156269_Optimal_Trajectory_Generation_for_Dynamic_Street_Scenarios_in_a_Frenet_Frame)
 
 
-# Path Tracking
+# Path Tracking Control
 ## LQR Steering Control
 * black line: the planned spline path
 * red circle: the position under lqr control
