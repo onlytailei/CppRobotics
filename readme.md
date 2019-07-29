@@ -76,7 +76,7 @@ Find all the executable files in ***build/bin***.
 ## A star
 * blue point: the start point
 * red point: the goal point
-<img src="https://ram-lab.com/file/tailei/gif/astar.gif" alt="astar" width="400"/>
+<img src="https://ram-lab.com/file/tailei/gif/a_star.gif" alt="a_star" width="400"/>
 
 ## RRT
 * red circle: the start point
