@@ -72,12 +72,11 @@ Find all the executable files in ***build/bin***.
 * blue point: the start point
 * red point: the goal point
 <img src="https://ram-lab.com/file/tailei/gif/dijkstra.gif" alt="dijkstra" width="400"/>
-<!--
+
 ## A star
 * blue point: the start point
 * red point: the goal point
 <img src="https://ram-lab.com/file/tailei/gif/astar.gif" alt="astar" width="400"/>
--->
 
 ## RRT
 * red circle: the start point
