@@ -219,8 +219,8 @@ void a_star_planning(float sx, float sy,
                     cv::Point((new_node->x+1)*img_reso, (new_node->y+1)*img_reso),
                     cv::Scalar(0, 255, 0));
 
-      std::string int_count = std::to_string(count);
-      cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+      // std::string int_count = std::to_string(count);
+      // cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
       count++;
       cv::imshow("astar", bg);
       cv::waitKey(5);
@@ -236,8 +236,8 @@ void a_star_planning(float sx, float sy,
   delete ngoal;
   delete nstart;
 
-  std::string int_count = std::to_string(count);
-  cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+  // std::string int_count = std::to_string(count);
+  // cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
   cv::imshow("astar", bg);
   cv::waitKey(5);
 };

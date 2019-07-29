@@ -27,6 +27,7 @@ Find all the executable files in ***build/bin***.
 * [SLAM](#SLAM)
     * FastSLAM 1.0
 * [Path Planning](#path-planning)
+    * [Dijkstra](#dijkstra)
     * [A Star](#a-star)
     * [RRT](#rrt)
     * [Dynamic Window Approach](#dynamic-window-approach)
