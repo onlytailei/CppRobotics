@@ -20,10 +20,10 @@ class Node{
 public:
   int x;
   int y;
-  float sum_cost;
+  float cost;
   Node* p_node;
 
-  Node(int x_, int y_, float sum_cost_=0, Node* p_node_=NULL):x(x_), y(y_), sum_cost(sum_cost_), p_node(p_node_){};
+  Node(int x_, int y_, float cost_, Node* p_node_=NULL):x(x_), y(y_),cost(cost_), p_node(p_node_){};
 };
 
 
@@ -91,8 +91,8 @@ bool verify_node(Node* node,
 }
 
 
-float calc_heristic(Node* n1, Node* n2, float w=1.0){
-  return w * std::sqrt(std::pow(n1->x-n2->x, 2)+std::pow(n1->y-n2->y, 2));
+float calc_heristic(Node n1, Node n2, float w=1.0){
+  return w * std::sqrt(std::pow(n1.x-n2.x, 2)+std::pow(n1.y-n2.y, 2));
 }
 
 std::vector<Node> get_motion_model(){
@@ -106,7 +106,7 @@ std::vector<Node> get_motion_model(){
           Node(1,    1,  std::sqrt(2))};
 }
 
-void a_star_planning(float sx, float sy,
+void dijkstra_star_planning(float sx, float sy,
                      float gx, float gy,
                      vector<float> ox_, vector<float> oy_,
                      float reso, float rr){
@@ -160,10 +160,7 @@ void a_star_planning(float sx, float sy,
                   cv::Scalar(0, 0, 255), -1);
 
   std::vector<std::vector<int> > visit_map(xwidth, vector<int>(ywidth, 0));
-  
-  std::vector<std::vector<float> > path_cost(xwidth, vector<float>(ywidth, std::numeric_limits<float>::max()));
 
-  path_cost[nstart->x][nstart->y] = 0;
 
   std::vector<std::vector<int> > obmap = calc_obstacle_map(
                                                   ox, oy,
@@ -173,7 +170,7 @@ void a_star_planning(float sx, float sy,
                                                   bg, img_reso);
 
   // NOTE: d_ary_heap should be a better choice here
-  auto cmp = [](const Node* left, const Node* right){return left->sum_cost > right->sum_cost;};
+  auto cmp = [](const Node* left, const Node* right){return left->cost > right->cost;};
   std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> pq(cmp);
 
   pq.push(nstart);
@@ -192,7 +189,7 @@ void a_star_planning(float sx, float sy,
     }
 
     if (node->x == ngoal->x && node->y==ngoal->y){
-      ngoal->sum_cost = node->sum_cost;
+      ngoal->cost = node->cost;
       ngoal->p_node = node;
       break;
     }
@@ -201,7 +198,7 @@ void a_star_planning(float sx, float sy,
       Node * new_node = new Node(
         node->x + motion[i].x,
         node->y + motion[i].y,
-        path_cost[node->x][node->y] + motion[i].sum_cost + calc_heristic(ngoal, node),
+        node->cost + motion[i].cost,
         node);
 
       if (!verify_node(new_node, obmap, min_ox, max_ox, min_oy, max_oy)){
@@ -219,16 +216,13 @@ void a_star_planning(float sx, float sy,
                     cv::Point((new_node->x+1)*img_reso, (new_node->y+1)*img_reso),
                     cv::Scalar(0, 255, 0));
 
-      std::string int_count = std::to_string(count);
-      cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+      // std::string int_count = std::to_string(count);
+      // cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
       count++;
       cv::imshow("astar", bg);
       cv::waitKey(5);
 
-      if (path_cost[node->x][node->y]+motion[i].sum_cost < path_cost[new_node->x][new_node->y]){
-        path_cost[new_node->x][new_node->y]=path_cost[node->x][node->y]+motion[i].sum_cost; 
-        pq.push(new_node);
-      }
+      pq.push(new_node);
     }
   }
 
@@ -236,8 +230,8 @@ void a_star_planning(float sx, float sy,
   delete ngoal;
   delete nstart;
 
-  std::string int_count = std::to_string(count);
-  cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
+  // std::string int_count = std::to_string(count);
+  // cv::imwrite("./pngs/"+std::string(5-int_count.length(), '0').append(int_count)+".png", bg);
   cv::imshow("astar", bg);
   cv::waitKey(5);
 };
@@ -281,6 +275,6 @@ int main(){
     oy.push_back(60.0 - i);
   }
 
-  a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_size);
+  dijkstra_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_size);
   return 0;
 }

@@ -35,6 +35,9 @@ target_link_libraries(pf ${OpenCV_LIBS} )
 #PathPlanning
 ##############################
 
+add_executable(dijkstra src/dijkstra.cpp)
+target_link_libraries(dijkstra ${OpenCV_LIBS} )
+
 add_executable(astar src/a_star.cpp)
 target_link_libraries(astar ${OpenCV_LIBS} )
 
