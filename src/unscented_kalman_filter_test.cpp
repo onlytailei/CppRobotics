@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <cstdlib>
 #include <math.h>
 #include <cmath>
@@ -32,7 +33,7 @@ namespace rviz {
     cv::ellipse(
       bg_img,
       cv_offset(center, bg_img.cols, bg_img.rows),
-      cv::Size(e_value(0,0)*1000, e_value(1,1)*1000),
+      cv::Size(e_value(0,0)*100, e_value(1,1)*100),
       angle / M_PI * 180,
       0,
       360,
@@ -43,6 +44,28 @@ namespace rviz {
 }
 
 namespace ukf {
+// Constan velocity model
+auto motion_model_cv = [](Eigen::Vector4d x, Eigen::Vector2d u, double dt)-> Eigen::Vector4d {
+  Eigen::Matrix4d F;
+  F <<1.0,  dt,   0.,   0.,
+          0., 1.0,   0.,   0.,
+          0.,   0., 1.0,   dt,
+          0.,   0.,   0.,  1.0;
+
+  return F * x;
+};
+
+auto observation_model_cv = [](Eigen::Vector4d x) -> Eigen::Vector2d {
+  Eigen::Matrix<double, 2, 4> H;
+  H << 1., 0., 0., 0.,
+       0., 0., 1., 0.;
+  return H * x;
+};
+
+auto wrap_angles_default = [](Eigen::VectorXd x) -> Eigen::VectorXd {
+  return x;
+};
+
 
 auto linear_motion_model = [](Eigen::Vector2d x, Eigen::Vector2d u, double dt)-> Eigen::Vector2d {
   Eigen::Matrix2d F;
@@ -60,6 +83,7 @@ auto observation_model = [](Eigen::Vector2d x) -> Eigen::Vector2d {
 };
 
 auto observation_model_2x4 = [](Eigen::Vector4d x) -> Eigen::Vector2d {
+  // State to measurement function H, is with dimensions dim_z x dim_x with ones  in the locations to be updated.
   Eigen::Matrix<double, 2, 4> H;
   H << 1., 0., 0., 0.,
        0., 1., 0., 0.;
@@ -71,15 +95,30 @@ auto motion_model_4x4 = [](Eigen::Vector4d x, Eigen::Vector2d u, double dt) -> E
   F <<1.0,   0.,   0.,   0.,
         0., 1.0,   0.,   0.,
         0.,   0., 1.0,   0.,
-        0.,   0.,   0., 1.0;
+        0.,   0.,   0.,  0.; // TODO: Should this be a 1.0? PythonRobotics has 0.0
 
+  // control input v (m/s), yaw_rate (rad/s)
   Eigen::Matrix<double, 4, 2> B;
-  B << dt * std::cos(x(2,0)),  0.,
-       dt * std::sin(x(2,0)),  0.,
+  B << dt * std::cos(x(2)),  0.,
+       dt * std::sin(x(2)),  0.,
                         0.0,  dt,
                         1.0,  0.0;
-
   return F * x + B * u;
+};
+
+auto wrap_angles = [](Eigen::Vector4d x) -> Eigen::Vector4d{
+  // When state is represented by [x y yaw v].
+  Eigen::Vector4d angles_wrapped = x;
+
+  while (angles_wrapped(2) < -M_PI) {
+    angles_wrapped(2) += (2*M_PI);
+  }
+
+  while (angles_wrapped(2) > M_PI) {
+    angles_wrapped(2) -= (2*M_PI);
+  }
+
+  return angles_wrapped;
 };
 
 Eigen::VectorXd residuals(Eigen::VectorXd const& sigma, Eigen::VectorXd const& x)
@@ -89,13 +128,59 @@ Eigen::VectorXd residuals(Eigen::VectorXd const& sigma, Eigen::VectorXd const& x
 
 Eigen::VectorXd residuals_x(Eigen::VectorXd const& sigma, Eigen::VectorXd const& x)
 {
-  return sigma - x;
+  // Residuals when state is represented by [x y yaw v].
+  Eigen::VectorXd residuals(x.rows());
+  residuals(0) = sigma(0) - x(0);
+  residuals(1) = sigma(1) - x(1);
+  residuals(3) = sigma(3) - x(3);
+
+  auto yaw_residual = sigma(2) - x(2);
+
+  while (yaw_residual < -M_PI) {
+    yaw_residual += (2*M_PI);
+  }
+
+  while (yaw_residual > M_PI) {
+    yaw_residual -= (2*M_PI);
+  }
+  //assert((yaw_residual < M_PI) && (yaw_residual > -M_PI));
+  residuals(2) = yaw_residual;
+  return residuals;
 }
+
+Eigen::VectorXd mean_fn_x(Eigen::MatrixXd const& sigmas, Eigen::VectorXd const& Wm)
+{
+  // State mean when state is represented by [x y yaw v].
+  Eigen::VectorXd mean(sigmas.cols());
+  mean.setZero();
+  double ss = 0.0;
+  double sc = 0.0;
+
+  for (auto i=0; i< sigmas.rows(); ++i) {
+    Eigen::VectorXd s = sigmas.row(i);
+
+    mean(0) += s(0) * Wm(i);
+    mean(1) += s(1) * Wm(i);
+    mean(3) += s(3) * Wm(i);
+    ss += std::sin(s(2)) * Wm(i);
+    sc += std::cos(s(2)) * Wm(i);
+  }
+  mean(2) = std::atan2(ss,sc);
+  return mean;
+}
+
+Eigen::VectorXd mean_fn(Eigen::MatrixXd const& sigmas, Eigen::VectorXd const& Wm)
+{
+  return sigmas.transpose() * Wm;
+}
+
+auto subtract_fn = residuals;
+auto subtract_fn_x = residuals_x;
 }
 
 
 TEST(UKFTest, NumSigmaTest) {
-  auto points = ukf::MerweScaledSigmaPoints(2, 0.1,0.1,0.1);
+  auto points = ukf::MerweScaledSigmaPoints(2, 0.1,0.1,0.1, ukf::subtract_fn);
   auto n_sigmas = points.num_sigmas();
   EXPECT_EQ(n_sigmas, 5);
 }
@@ -106,7 +191,7 @@ TEST(UKFTest, SigmaPoints2DTest) {
   auto alpha = 1e-3;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
 
   Eigen::Vector2d x;
   x << 1.,2.;
@@ -129,7 +214,7 @@ TEST(UKFTest, SigmaPoints2DTest) {
 
 
 TEST(UKFTest, SigmaPointsTest) {
-  auto points = ukf::MerweScaledSigmaPoints(4, 1e-3,2.0,0.0);
+  auto points = ukf::MerweScaledSigmaPoints(4, 1e-3,2.0,0.0, ukf::subtract_fn);
   Eigen::Vector4d x = Eigen::Vector4d::Zero();
   Eigen::Matrix4d P = Eigen::Matrix4d::Identity();
   auto sigmas = points.sigma_points(x, P);
@@ -155,7 +240,7 @@ TEST(UKFTest, ComputeWeightsTest) {
   auto alpha = 1e-3;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
   auto wm = points.Wm;
 
   Eigen::Matrix<double,5,1> wm_expected;
@@ -174,7 +259,7 @@ TEST(UKFTest, UnscentedTransformTest) {
   auto alpha = 1e-3;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
 
   Eigen::Vector2d x;
   x << 1.,2.;
@@ -189,7 +274,7 @@ TEST(UKFTest, UnscentedTransformTest) {
 
   auto sigmas = points.sigma_points(x, P);
 
-  auto pair = ukf::unscented_transform(sigmas, points.Wm, points.Wc, noise_cov, ukf::residuals);
+  auto pair = ukf::unscented_transform(sigmas, points.Wm, points.Wc, noise_cov, ukf::residuals, ukf::mean_fn);
 
   ASSERT_TRUE((std::get<0>(pair) - x).norm() < 1e-5);
   ASSERT_TRUE((std::get<1>(pair) - P).norm() < 1e-5);
@@ -201,7 +286,7 @@ TEST(UKFTest, ResidualsTest) {
   auto alpha = 0.001;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
 
   Eigen::Vector2d x;
   x << 1.,2.;
@@ -220,12 +305,11 @@ TEST(UKFTest, ResidualsTest) {
 
 
 TEST(UKFTest, UKFPredictTest) {
-
   auto n = 2;
   auto alpha = 0.001;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
 
   Eigen::Vector2d x;
   x << 1.,2.;
@@ -246,19 +330,16 @@ TEST(UKFTest, UKFPredictTest) {
                 dim_z,
                 dt,
                 points,
+                ukf::wrap_angles_default,
                 ukf::linear_motion_model,
                 ukf::observation_model,
                 ukf::residuals,
-                ukf::residuals);
-
-  std::cout << ukf.x_prior << std::endl;
-  std::cout << ukf.P_prior << std::endl;
+                ukf::residuals,
+                ukf::mean_fn,
+                ukf::mean_fn);
 
   ukf.predict(u);
   ukf.update(z);
-  std::cout << "AFTER" << std::endl;
-  std::cout << ukf.x_prior << std::endl;
-  std::cout << ukf.P_prior << std::endl;
   //TODO: FINISH TESTING
 }
 
@@ -270,7 +351,7 @@ TEST(UKFTest, CrossVarianceTest) {
   auto alpha = 0.001;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
 
   Eigen::Vector2d x;
   x << 1.,2.;
@@ -290,7 +371,6 @@ TEST(UKFTest, CrossVarianceTest) {
   auto n_sigmas = points.num_sigmas();
   Eigen::MatrixXd sigmas_f = Eigen::MatrixXd::Zero(n_sigmas, n);
 
-
   // Pass the sigmas through the process model.
   for (auto i=0; i<n_sigmas; i++) {
     sigmas_f.row(i) = ukf::linear_motion_model(sigmas.row(i), u, dt);
@@ -309,25 +389,177 @@ TEST(UKFTest, CrossVarianceTest) {
                 dim_z,
                 dt,
                 points,
+                ukf::wrap_angles_default,
                 ukf::linear_motion_model,
                 ukf::observation_model,
                 ukf::residuals,
-                ukf::residuals);
+                ukf::residuals,
+                ukf::mean_fn,
+                ukf::mean_fn);
 
   auto CV = ukf.cross_variance(x, z,sigmas_f, sigmas_h);
   // TODO: Finish test
 }
 
 
+TEST(UKFTest, SimulationSimpleCVTest) {
+  // Constant Velocity model
+  auto n = 4; // [x, x_dot, y, y_dot]
+  auto dt = 0.1;
+  auto alpha = 0.1;
+  auto beta = 2.0;
+  auto kappa = 1.0;
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn);
+
+  // Dont really need, but current implementation requires a u to pass to motion_model.
+  Eigen::Vector2d u;
+  u << 0.0, 0.0;
+
+  // noisy control input
+  Eigen::Vector2d ud;
+
+  // observation z
+  Eigen::Vector2d z;
+
+  // dead reckoning
+  Eigen::Vector4d xDR;
+  xDR << 0.1,1.0,0.1,1.0;
+
+  // ground truth reading
+  Eigen::Vector4d xTrue;
+  xTrue << 0.1,1.0,0.1,1.0;
+
+  Eigen::Vector4d xEst;
+  xEst << 0.1,1.0,0.1,1.0;
+
+  std::vector<Eigen::Vector4d> hxDR;
+  std::vector<Eigen::Vector4d> hxTrue;
+  std::vector<Eigen::Vector4d> hxEst;
+  std::vector<Eigen::Vector2d> hz;
+
+  Eigen::Matrix4d PEst = Eigen::Matrix4d::Identity();
+
+  // Motion model covariance
+  Eigen::Matrix4d Q = Eigen::Matrix4d::Identity();
+  Q(0,0)=0.25 * (dt*dt*dt*dt) * 0.02;
+  Q(0,1)=0.5 * (dt*dt*dt) * 0.02;
+  Q(1,0)=0.5 * (dt*dt*dt) * 0.02;
+  Q(1,1)=(dt*dt) * 0.02;
+  Q(2,2)=0.25 * (dt*dt*dt*dt) * 0.02;
+  Q(2,3)=0.5 * (dt*dt*dt) * 0.02;
+  Q(3,2)=0.5 * (dt*dt*dt) * 0.02;
+  Q(3,3)=(dt*dt) * 0.02;
+
+  Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
+  R(0,0)=0.09;
+  R(1,1)=0.09;
+
+  // Motion model simulation error
+  Eigen::Matrix2d Qsim = Eigen::Matrix2d::Identity();
+  Qsim(0,0)=0.25 * (dt*dt*dt*dt) * 0.02;
+  Qsim(1,1)=(dt*dt) * 0.02;
+
+  // Observation model simulation error
+  Eigen::Matrix2d Rsim = Eigen::Matrix2d::Identity();
+  Rsim(0,0)=0.09;
+  Rsim(1,1)=0.09;
+
+  auto ukf = ukf::UnscentedKalmanFilter(
+                n,
+                z.rows(),
+                dt,
+                points,
+                ukf::wrap_angles_default,
+                ukf::motion_model_cv,
+                ukf::observation_model_cv,
+                ukf::residuals,
+                ukf::residuals,
+                ukf::mean_fn,
+                ukf::mean_fn);
+    ukf.Q = Q;
+    ukf.R = R;
+    auto time = 0.0;
+
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> gaussian_d{0,1};
+
+    cv::namedWindow("ukf");
+    while (time < 50.0) {
+      time += dt;
+
+      ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
+      ud(1) = u(1) + gaussian_d(gen) * Qsim(1,1);
+
+      xTrue = ukf::motion_model_cv(xTrue, u, dt);
+      //std::cout << "xTrue" << xTrue << std::endl;
+      xDR = ukf::motion_model_cv(xDR, ud, dt);
+
+      z(0) = time + gaussian_d(gen) * Rsim(0,0);
+      z(1) = time + gaussian_d(gen) * Rsim(1,1);
+
+      ukf.predict(ud);
+      ukf.update(z);
+
+      auto xEst = ukf.x_post;
+
+      hxDR.push_back(xDR);
+      hxTrue.push_back(xTrue);
+      hxEst.push_back(xEst);
+      hz.push_back(z);
+
+      //visualization
+
+      cv::Mat bg(700,1500, CV_8UC3, cv::Scalar(255,255,255));
+
+      for(unsigned int j=0; j<hxDR.size(); j++){
+
+        // Green groundtruth
+        // State is found at index 0 and 2.
+        Eigen::Vector2d x_true;
+        x_true << hxTrue[j](0), hxTrue[j](2);
+        cv::circle(bg, rviz::cv_offset(x_true, bg.cols, bg.rows),
+                   7, cv::Scalar(0,255,0), 2);
+
+        // blue estimation
+        Eigen::Vector2d x_est;
+        x_est << hxEst[j](0),hxEst[j](2);
+        cv::circle(bg, rviz::cv_offset(x_est, bg.cols, bg.rows),
+                   10, cv::Scalar(255,0,0), 5);
+
+        // black dead reckoning
+        Eigen::Vector2d x_dr;
+        x_dr << hxDR[j](0),hxDR[j](2);
+        cv::circle(bg, rviz::cv_offset(x_dr, bg.cols, bg.rows),
+                   7, cv::Scalar(0, 0, 0), -1);
+      }
+
+      // red observation
+      for(unsigned int i=0; i<hz.size(); i++){
+        cv::circle(bg, rviz::cv_offset(hz[i], bg.cols, bg.rows),
+                 7, cv::Scalar(0, 0, 255), -1);
+      }
+
+      Eigen::Vector2d ellipse_x_est;
+      ellipse_x_est << xEst(0), xEst(2);
+      rviz::ellipse_drawing(bg, PEst.block(0,0,2,2), ellipse_x_est);
+
+      cv::imshow("ukf", bg);
+      cv::waitKey(5);
+
+    }
+}
+
+
 TEST(UKFTest, SimulationTest) {
-  auto n = 4;
+  auto n = 4; // [x y yaw v]'
   auto dt = 0.1;
   auto alpha = 0.001;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(n, alpha, beta, kappa, ukf::subtract_fn_x);
 
-  // control input
+  // control input v (m/s), yaw_rate (rad/s)
   Eigen::Vector2d u;
   u << 1.0, 0.1;
 
@@ -336,20 +568,17 @@ TEST(UKFTest, SimulationTest) {
 
   // observation z
   Eigen::Vector2d z;
-  std::cout << "z rows" << z.rows() << std::endl;
-  std::cout << "z cols" << z.cols() << std::endl;
-
 
   // dead reckoning
   Eigen::Vector4d xDR;
-  xDR << 0.0,0.0,0.0,0.0;
+  xDR << 0.1,0.1,0.0,1.0;
 
   // ground truth reading
   Eigen::Vector4d xTrue;
-  xTrue << 0.0,0.0,0.0,0.0;
+  xTrue << 0.1,0.1,0.0,1.0;;
 
   Eigen::Vector4d xEst;
-  xEst << 0.0,0.0,0.0,0.0;
+  xEst << 0.1,0.1,0.0,1.0;;
 
   std::vector<Eigen::Vector4d> hxDR;
   std::vector<Eigen::Vector4d> hxTrue;
@@ -360,53 +589,62 @@ TEST(UKFTest, SimulationTest) {
 
   // Motional model covariance
   Eigen::Matrix4d Q = Eigen::Matrix4d::Identity();
-  Q(0,0)=0.1 * 0.1;
-  Q(1,1)=0.1 * 0.1;
-  Q(2,2)=(1.0/180 * M_PI) * (1.0/180 * M_PI);
-  Q(3,3)=0.1 * 0.1;
+  Q(0,0)=0.25 * (dt*dt*dt*dt) * 0.02;
+  Q(0,1)=0.5 * (dt*dt*dt) * 0.02;
+  Q(1,0)=0.5 * (dt*dt*dt) * 0.02;
+  Q(1,1)=(dt*dt) * 0.02;
+  Q(2,2)=0.25 * (dt*dt*dt*dt) * 0.02;
+  Q(2,3)=0.5 * (dt*dt*dt) * 0.02;
+  Q(3,2)=0.5 * (dt*dt*dt) * 0.02;
+  Q(3,3)=(dt*dt) * 0.02;
 
-  Eigen::Matrix2d  R = Eigen::Matrix2d::Identity();
-  R(0,0)=1.0;
-  R(1,1)=1.0;
+  Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
+  R(0,0)=0.09;
+  R(1,1)=0.09;
 
   // Motion model simulation error
   Eigen::Matrix2d Qsim = Eigen::Matrix2d::Identity();
-  Qsim(0,0)=1.0;
-  Qsim(1,1)=(30.0/180 * M_PI) * (30.0/180 * M_PI);
+  Qsim(0,0)=0.09;
+  Qsim(1,1)=0.09;
 
   // Observation model simulation error
   Eigen::Matrix2d Rsim = Eigen::Matrix2d::Identity();
-  Rsim(0,0)=0.5 * 0.5;
-  Rsim(1,1)=0.5 * 0.5;
+  Rsim(0,0)=0.09;
+  Rsim(1,1)=0.09;
 
   auto ukf = ukf::UnscentedKalmanFilter(
                 n,
                 z.rows(),
                 dt,
                 points,
+                ukf::wrap_angles,
                 ukf::motion_model_4x4,
                 ukf::observation_model_2x4,
+                ukf::residuals_x,
                 ukf::residuals,
-                ukf::residuals);
+                ukf::mean_fn_x,
+                ukf::mean_fn);
+
+  // Initial settings.
+  ukf.x = xTrue;
   ukf.Q = Q;
   ukf.R = R;
 
   auto time = 0.0;
-
 
   std::random_device rd{};
   std::mt19937 gen{rd()};
   std::normal_distribution<> gaussian_d{0,1};
 
   cv::namedWindow("ukf");
-  while (time < 50.0) {
+  while (time < 100.0) {
     time += dt;
 
     ud(0) = u(0) + gaussian_d(gen) * Qsim(0,0);
     ud(1) = u(1) + gaussian_d(gen) * Qsim(1,1);
 
     xTrue = ukf::motion_model_4x4(xTrue, u, dt);
-    std::cout << "xTrue" << xTrue << std::endl;
+
     xDR = ukf::motion_model_4x4(xDR, ud, dt);
 
     z(0) = xTrue(0) + gaussian_d(gen) * Rsim(0,0);
@@ -422,9 +660,8 @@ TEST(UKFTest, SimulationTest) {
     hxEst.push_back(xEst);
     hz.push_back(z);
 
-
     //visualization
-    cv::Mat bg(1000,1000, CV_8UC3, cv::Scalar(255,255,255));
+    cv::Mat bg(700,1500, CV_8UC3, cv::Scalar(255,255,255));
     for(unsigned int j=0; j<hxDR.size(); j++){
 
       // green groundtruth
@@ -447,12 +684,9 @@ TEST(UKFTest, SimulationTest) {
     }
 
     rviz::ellipse_drawing(bg, PEst.block(0,0,2,2), xEst.head(2));
-
     cv::imshow("ukf", bg);
     cv::waitKey(5);
-
   }
-
 }
 
 
@@ -463,18 +697,20 @@ TEST(UKFTest, InitTest) {
   auto alpha = 1e-3;
   auto beta = 2.0;
   auto kappa = 0.0;
-  auto points = ukf::MerweScaledSigmaPoints(dim_x, alpha, beta, kappa);
+  auto points = ukf::MerweScaledSigmaPoints(dim_x, alpha, beta, kappa, ukf::subtract_fn);
 
   ukf::UnscentedKalmanFilter ukf = ukf::UnscentedKalmanFilter(
                                                 dim_x,
                                                 dim_z,
                                                 dt,
                                                 points,
+                                                ukf::wrap_angles_default,
                                                 ukf::linear_motion_model,
                                                 ukf::observation_model,
                                                 ukf::residuals,
-                                                ukf::residuals);
+                                                ukf::residuals,
+                                                ukf::mean_fn,
+                                                ukf::mean_fn);
   uint dim = ukf.x.size();
-
   EXPECT_EQ(dim, 4);
 }
