@@ -8,15 +8,15 @@
 #ifndef _TRAJECTORY_OPTIMIZER_H
 #define _TRAJECTORY_OPTIMIZER_H
 
-#include <iostream>
-#include <cmath>
-#include <cfenv>
-#include <Eigen/Eigen>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <sys/time.h>
-#include "motion_model.h"
+#include<iostream>
+#include<cmath>
+#include<cfenv>
+#include<Eigen/Eigen>
+#include<opencv2/opencv.hpp>
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<sys/time.h>
+#include"motion_model.h"
 
 
 namespace cpprobotics{

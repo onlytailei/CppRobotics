@@ -10,7 +10,7 @@
 #include<opencv2/opencv.hpp>
 #include<opencv2/core/core.hpp>
 #include<opencv2/highgui/highgui.hpp>
-#include"rrt.h"
+#include"rrt_star.h"
 
 using namespace std;
 using namespace cpprobotics;
@@ -29,10 +29,10 @@ int main(){
 
 	std::vector<float> rand_area{-2, 15};
 
-	RRT rrt(start, goal, obstacle_list, rand_area, 0.5);
+	RRTStar rrt_star(start, goal, obstacle_list, rand_area, 0.5, 5, 500, 50.0);
 
 
-	std::vector<Node*> path = rrt.planning();
+	std::vector<Node*> path = rrt_star.planning();
 
 }
 

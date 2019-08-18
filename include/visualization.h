@@ -9,12 +9,12 @@
 #define _VISUALIZATION_H
 
 
-#include <iostream>
-#include <random>
-#include <cmath>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include<iostream>
+#include<random>
+#include<cmath>
+#include<opencv2/opencv.hpp>
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
 
 namespace cpprobotics{
 

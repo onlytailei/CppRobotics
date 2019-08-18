@@ -8,13 +8,13 @@
 #ifndef _CUBIC_SPLINE_H
 #define _CUBIC_SPLINE_H
 
-#include <iostream>
-#include <vector>
-#include <array>
-#include <string>
-#include <Eigen/Eigen>
-#include <stdexcept>
-#include "cpprobotics_types.h"
+#include<iostream>
+#include<vector>
+#include<array>
+#include<string>
+#include<Eigen/Eigen>
+#include<stdexcept>
+#include"cpprobotics_types.h"
 
 namespace cpprobotics{
 

@@ -8,12 +8,12 @@
 #ifndef _QUARTIC_POLYNOMIAL_H
 #define _QUARTIC_POLYNOMIAL_H
 
-#include <iostream>
-#include <vector>
-#include <array>
-#include <string>
-#include <cmath>
-#include <Eigen/Eigen>
+#include<iostream>
+#include<vector>
+#include<array>
+#include<string>
+#include<cmath>
+#include<Eigen/Eigen>
 
 
 namespace cpprobotics{
