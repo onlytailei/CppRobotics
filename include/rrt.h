@@ -23,16 +23,19 @@ class Node{
 public:
 	float x;
 	float y;
+  std::vector<float> path_x;
+  std::vector<float> path_y;
 	Node* parent;
+  float cost;
 
-	Node(float x_, float y_): x(x_), y(y_), parent(NULL){};
+	Node(float x_, float y_): x(x_), y(y_), parent(NULL), cost(0){};
 };
 
 
 class RRT{
 public:
 	RRT(Node*, Node*, std::vector<std::vector<float> >, 
-		  std::vector<float>, float, int, int);
+		  std::vector<float>, float, float, int, int);
 
 	std::vector<Node*> planning();
 	
@@ -40,10 +43,14 @@ public:
 	
 	bool CollisionCheck(Node*);
 
-private:
+protected:
+
+  Node* steer(Node* , Node*, float extend_length);
+
 	Node* start;
 	Node* end;
 	const float expand_dis;
+	const float path_resolution;
 	const int goal_sample_rate;
 	const int max_iter;
 	const std::vector<std::vector<float> > ob_list;
@@ -59,11 +66,11 @@ private:
   std::mt19937 area_gen;
   std::uniform_real_distribution<float> area_dis;
 
+  static std::vector<float> calc_distance_and_angle(Node*, Node*);
 };
 
-RRT::RRT(Node* start_, Node* end_, std::vector<std::vector<float> > ob_list_, std::vector<float> rand_area_, float expand_dis_=1.0, int goal_sample_rate_=5, int max_iter_=500 ): 
-		start(start_), end(end_), ob_list(ob_list_), expand_dis(expand_dis_), goal_sample_rate(goal_sample_rate_), max_iter(max_iter_), 
-		goal_gen(goal_rd()), goal_dis(std::uniform_int_distribution<int>(0, 100)), area_gen(area_rd()), area_dis(std::uniform_real_distribution<float>(rand_area_[0], rand_area_[1])), rand_area(rand_area_){};
+RRT::RRT(Node* start_, Node* end_, std::vector<std::vector<float> > ob_list_, std::vector<float> rand_area_, float expand_dis_=1.0, float path_resolution_=1.0, int goal_sample_rate_=5, int max_iter_=500 ): 
+		start(start_), end(end_), ob_list(ob_list_), expand_dis(expand_dis_), path_resolution(path_resolution_), goal_sample_rate(goal_sample_rate_), max_iter(max_iter_), goal_gen(goal_rd()), goal_dis(std::uniform_int_distribution<int>(0, 100)), area_gen(area_rd()), area_dis(std::uniform_real_distribution<float>(rand_area_[0], rand_area_[1])), rand_area(rand_area_){};
 
 std::vector<Node*> RRT::planning(){
 
@@ -173,7 +180,47 @@ bool RRT::CollisionCheck(Node* node){
 	return true;
 }
 
+Node* RRT::steer(Node* from_node, Node* to_node, float extend_length=std::numeric_limits<float>::max()){
+  Node * new_node = new Node(from_node->x, from_node->y);
+  std::vector<float> dist_angle = calc_distance_and_angle(new_node, to_node);
 
+  new_node->path_x.push_back(new_node->x); 
+  new_node->path_y.push_back(new_node->y);
+
+  if (extend_length > dist_angle[0]){
+    extend_length = dist_angle[0];
+  }
+
+  int n_expand = std::floor(extend_length/path_resolution);
+
+  for(int i=0; i<n_expand; i++){
+    new_node->x += path_resolution * std::cos(dist_angle[1]);
+    new_node->y += path_resolution * std::sin(dist_angle[1]);
+    new_node->path_x.push_back(new_node->x);
+    new_node->path_y.push_back(new_node->y);
+  }
+
+  std::vector<float> dist_angle_new = calc_distance_and_angle(new_node, to_node);
+
+  if (dist_angle_new[0] <= path_resolution){
+    new_node->x = to_node->x;
+    new_node->y = to_node->y;
+    new_node->path_x.back()=to_node->x;
+    new_node->path_y.back()=to_node->y;
+  }
+
+  new_node->parent = from_node;
+  return new_node;
+
+};
+
+std::vector<float> RRT::calc_distance_and_angle(Node* from_node, Node* to_node){
+  float dx = to_node->x - from_node->x;
+  float dy = to_node->y - from_node->y;
+  float d = std::sqrt(dx*dx + dy*dy);
+  float theta = std::atan2(dy, dx);
+  return {d, theta};
+};
 
 }
 #endif

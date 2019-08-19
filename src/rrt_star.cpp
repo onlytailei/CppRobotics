@@ -29,7 +29,7 @@ int main(){
 
 	std::vector<float> rand_area{-2, 15};
 
-	RRTStar rrt_star(start, goal, obstacle_list, rand_area, 0.5, 5, 500, 50.0);
+	RRTStar rrt_star(start, goal, obstacle_list, rand_area, 0.5, 1.0, 5, 500, 50.0);
 
 
 	std::vector<Node*> path = rrt_star.planning();
