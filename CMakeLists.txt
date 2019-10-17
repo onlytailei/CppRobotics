@@ -11,15 +11,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #############################
 
 find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-
 find_package(OpenCV REQUIRED)
+
 include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(./include)
 
 #include_directories(/home/tai/Software/Ipopt-3.12.13/build/include)
 #link_directories(/home/tai/Software/Ipopt-3.12.13/build/lib)
 
-include_directories(./include)
+
 
 ##############################
 #Localization
