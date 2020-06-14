@@ -15,7 +15,7 @@
 #include<cfenv>
 #include<Eigen/Eigen>
 
-#define YAW_P2P(angle) std::fmod((angle+M_PI), 2*M_PI)-M_PI
+#define YAW_P2P(angle) std::fmod(std::fmod((angle)+M_PI, 2*M_PI)-2*M_PI, 2*M_PI)+M_PI
 
 namespace cpprobotics{
 
