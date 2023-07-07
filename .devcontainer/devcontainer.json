@@ -17,5 +17,13 @@
 			"webPort": 6080
 		}
 	},
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"streetsidesoftware.code-spell-checker"
+			]
+		}
+	},
 	"remoteUser": "vscode"
 }
