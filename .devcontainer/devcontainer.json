@@ -1,0 +1,29 @@
+{
+	"name": "CppRobotics",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"REINSTALL_CMAKE_VERSION_FROM_SOURCE": "3.25.2"
+		}
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"username": "vscode",
+			"userUid": "1000",
+			"userGid": "1000"
+		},
+		// For default password, see https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/desktop-lite.md
+		"ghcr.io/devcontainers/features/desktop-lite:1": {
+			"webPort": 6080
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"streetsidesoftware.code-spell-checker"
+			]
+		}
+	},
+	"remoteUser": "vscode"
+}
