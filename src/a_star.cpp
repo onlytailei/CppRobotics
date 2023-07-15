@@ -79,7 +79,7 @@ std::vector<std::vector<int> > calc_obstacle_map(
 
 
 bool verify_node(Node* node,
-                 vector<vector<int> > obmap,
+                 const vector<vector<int>>& obmap,
                  int min_ox, int max_ox,
                  int min_oy, int max_oy){
   if (node->x < min_ox || node->y < min_oy || node->x >= max_ox || node->y >= max_oy){
