@@ -92,7 +92,7 @@ bool verify_node(Node* node,
 }
 
 
-float calc_heristic(Node* n1, Node* n2, float w=1.0){
+float calc_heuristic(Node* n1, Node* n2, float w=1.0){
   return w * std::sqrt(std::pow(n1->x-n2->x, 2)+std::pow(n1->y-n2->y, 2));
 }
 
@@ -202,7 +202,7 @@ void a_star_planning(float sx, float sy,
       Node * new_node = new Node(
         node->x + motion[i].x,
         node->y + motion[i].y,
-        path_cost[node->x][node->y] + motion[i].sum_cost + calc_heristic(ngoal, node),
+        path_cost[node->x][node->y] + motion[i].sum_cost + calc_heuristic(ngoal, node),
         node);
 
       if (!verify_node(new_node, obmap, min_ox, max_ox, min_oy, max_oy)){
