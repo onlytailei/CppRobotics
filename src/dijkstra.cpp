@@ -91,9 +91,6 @@ bool verify_node(Node* node,
 }
 
 
-float calc_heristic(Node n1, Node n2, float w=1.0){
-  return w * std::sqrt(std::pow(n1.x-n2.x, 2)+std::pow(n1.y-n2.y, 2));
-}
 
 std::vector<Node> get_motion_model(){
   return {Node(1,   0,  1),
